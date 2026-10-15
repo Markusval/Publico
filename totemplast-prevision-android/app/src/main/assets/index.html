@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#112e43">
+  <meta name="description" content="Previsiones de produccion por inyeccion de plastico. Funciona sin Internet.">
+  <title>TOTEMPLAST - Prevision de produccion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+ <header class="masthead">
+  <div class="wrap masthead-inner">
+   <div class="brand"><span class="brand-mark">T</span><span><strong>TOTEMPLAST</strong><small>CONTROL DE PRODUCCIÓN</small></span></div>
+   <div class="clock" id="clock" aria-live="off">Reloj del dispositivo</div>
+  </div>
+ </header>
+ <main class="wrap">
+  <section class="intro">
+   <div><p class="eyebrow">Planificación de inyección</p><h1>Previsión de producción</h1>
+   <p>Introduce los datos de la máquina. El cálculo respeta el horario de producción de lunes 06:00 a sábado 06:00.</p></div>
+   <span class="offline-tag">Sin IA · Sin Internet</span>
+  </section>
+
+  <section class="panel" aria-labelledby="input-heading">
+   <div class="panel-head"><div><span class="step">01</span><h2 id="input-heading">Datos del pedido</h2></div>
+    <button type="button" class="text-btn" id="exampleBtn">Cargar DSM 113</button></div>
+
+   <div class="saved-row">
+    <label for="savedReferences">Referencias guardadas</label>
+    <div class="saved-flex"><select id="savedReferences"><option value="">Selecciona una referencia</option></select>
+      <button id="newBtn" type="button" class="outline small-btn">Nueva</button>
+      <button id="deleteBtn" type="button" class="outline small-btn" disabled>Eliminar</button>
+    </div>
+   </div>
+
+   <div class="form-grid">
+    <div class="field"><label for="reference">Referencia <span class="req">*</span></label>
+      <input id="reference" type="text" autocapitalize="characters" placeholder="Ej. DSM 113" autocomplete="off" maxlength="90"></div>
+    <div class="field"><label for="orderPieces">Pedido total (piezas) <span class="req">*</span></label>
+      <input id="orderPieces" type="number" min="1" step="1" inputmode="numeric" placeholder="6048"></div>
+   </div>
+
+   <div class="section-divider"><span>Máquina y ritmo</span></div>
+   <div class="form-grid">
+    <div class="field"><label for="cavities">Cavidades activas <span class="req">*</span></label>
+      <input id="cavities" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></div>
+    <div class="field"><label for="injectionsPerHour">Ciclo o ritmo actual <span class="req">*</span></label>
+      <input id="injectionsPerHour" type="text" inputmode="decimal" placeholder="Ej. 67,2" autocomplete="off">
+      <select id="rateUnit" class="rate-unit" aria-label="Unidad de la medición">
+       <option value="seconds" selected>Segundos por ciclo</option>
+       <option value="per_hour">Inyectadas por hora</option>
+      </select></div>
+   </div>
+   <p class="help">Puedes introducir el ciclo en segundos (inyectadas/h = 3.600 / ciclo) o directamente las inyectadas/hora. La app multiplica por las cavidades para obtener piezas/hora.</p>
+   <p class="rate-reminder" id="previousRate" aria-live="polite">Introduce el ciclo o ritmo actual. No se reutiliza automáticamente el anterior.</p>
+
+   <div class="section-divider"><span>Embalaje</span></div>
+   <div class="form-grid">
+    <div class="field"><label for="piecesPerBox">Piezas por caja <span class="req">*</span></label>
+      <input id="piecesPerBox" type="number" min="1" step="1" inputmode="numeric" placeholder="28"></div>
+    <div class="field"><label for="boxesPerPallet">Cajas por palet <span class="req">*</span></label>
+      <input id="boxesPerPallet" type="number" min="1" step="1" inputmode="numeric" placeholder="18"></div>
+   </div>
+
+   <div class="section-divider"><span>Producción ya realizada</span></div>
+   <div class="segmented" role="group" aria-label="Forma de introducir la produccion">
+     <button type="button" id="totalBoxesMode" class="seg active" aria-pressed="true">Cajas totales</button>
+     <button type="button" id="palletMode" class="seg" aria-pressed="false">Palets + cajas</button>
+   </div>
+   <div id="totalBoxesInputs" class="form-grid">
+    <div class="field"><label for="producedBoxes">Cajas completas fabricadas <span class="req">*</span></label>
+      <input id="producedBoxes" type="number" min="0" step="1" inputmode="numeric" placeholder="42" value="0"></div>
+   </div>
+   <div id="palletInputs" class="form-grid hidden">
+    <div class="field"><label for="producedPallets">Palets completos</label>
+      <input id="producedPallets" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
+    <div class="field"><label for="producedExtraBoxes">Cajas fuera de palets completos</label>
+      <input id="producedExtraBoxes" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
+   </div>
+   <div class="form-grid">
+    <div class="field"><label for="producedLoosePieces">Piezas sueltas adicionales (opcional)</label>
+      <input id="producedLoosePieces" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
+   </div>
+
+   <div class="section-divider"><span>Momento de la lectura</span></div>
+   <div class="time-options" role="group" aria-label="Momento de lectura">
+    <label class="option"><input type="radio" name="readingTimeMode" id="timeNow" value="now" checked><span><strong>Ahora</strong><small>Usar reloj del móvil al calcular</small></span></label>
+    <label class="option"><input type="radio" name="readingTimeMode" id="timePast" value="past"><span><strong>Lectura anterior</strong><small>Indicar fecha y hora de la toma</small></span></label>
+   </div>
+   <div id="pastReadingField" class="field historical hidden"><label for="readingDateTime">Fecha y hora de la lectura</label>
+     <input type="datetime-local" id="readingDateTime"></div>
+   <p class="help">Al recuperar una referencia guardada, se conserva la fecha de su última lectura. Si actualizas las cajas fabricadas, se activa «Ahora».</p>
+
+   <div id="errorBox" role="alert" class="error hidden"></div>
+   <button type="button" class="primary" id="calculateBtn"><span>Calcular previsión</span><span aria-hidden="true">→</span></button>
+  </section>
+
+  <section class="panel calendar-panel" aria-labelledby="calendar-heading">
+    <div class="panel-head"><div><span class="step">02</span><h2 id="calendar-heading">Calendario de trabajo</h2></div>
+      <span class="schedule-tag">Horario por defecto activo</span></div>
+    <div class="weekly-schedule">
+      <div class="weekly-box working"><span>FABRICACIÓN</span><strong>Lunes 06:00 → sábado 06:00</strong><small>24 horas continuas, 120 horas por semana</small></div>
+      <div class="weekly-box rest"><span>PARADA SEMANAL</span><strong>Sábado 06:00 → lunes 06:00</strong><small>48 horas sin producción</small></div>
+    </div>
+    <div class="section-divider"><span>Festivos adicionales</span></div>
+    <p class="muted">Toca un día del calendario para marcarlo o desmarcarlo como festivo. El horario habitual se mantiene siempre.</p>
+    <div class="calendar-layout">
+      <div class="monthly-calendar">
+        <div class="calendar-nav">
+          <button type="button" class="calendar-arrow" id="calPrev" aria-label="Mes anterior">‹</button>
+          <strong id="calMonthTitle">Mes y año</strong>
+          <button type="button" class="calendar-arrow" id="calNext" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="calendar-weekdays"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+        <div id="calendarGrid" class="calendar-days" role="group" aria-label="Seleccionar festivos"></div>
+        <div class="calendar-legend"><span><i class="legend-dot holiday-dot"></i> Festivo marcado</span><span><i class="legend-dot weekend-dot"></i> Fin de semana</span></div>
+      </div>
+      <div class="selected-holidays">
+        <strong>Festivos seleccionados</strong>
+        <div id="holidayList" class="exceptions-list"><p class="no-exceptions">Ningún festivo añadido.</p></div>
+      </div>
+    </div>
+    <p class="schedule-rule">Regla de festivos TOTEMPLAST: marcar un viernes detiene la máquina desde el jueves anterior a las 06:00. El festivo completo se configura desde la víspera a las 06:00 hasta el día siguiente a las 06:00. Si coincide el fin de semana, se reanuda el lunes a las 06:00.</p>
+    <div class="section-divider"><span>Puentes, vacaciones y paradas a medida</span></div>
+    <p class="muted">Para un cierre de varios días o un horario distinto, indica la fecha y hora exactas de parada y de reanudación.</p>
+    <div class="form-grid">
+      <div class="field"><label for="pauseStart">Parar desde</label><input id="pauseStart" type="datetime-local"></div>
+      <div class="field"><label for="pauseEnd">Reanudar el</label><input id="pauseEnd" type="datetime-local"></div>
+    </div>
+    <div class="pause-actions">
+      <div class="field"><label for="pauseLabel">Motivo (opcional)</label><input id="pauseLabel" type="text" maxlength="80" placeholder="Ej. Vacaciones de verano"></div>
+      <button id="addPauseBtn" type="button" class="outline">+ Añadir parada</button>
+    </div>
+    <div id="calendarError" class="error hidden" role="alert"></div>
+    <div id="pauseList" class="exceptions-list pause-list"><p class="no-exceptions">No hay paradas especiales.</p></div>
+    <p class="help">Los festivos y paradas se guardan en este dispositivo y se aplican a todas las referencias de producción.</p>
+    <button type="button" class="primary" id="calculateCalendarBtn">Calcular con este calendario →</button>
+  </section>
+
+  <section class="results hidden" id="results" aria-live="polite">
+   <div class="results-title"><div><span class="step">03</span><h2 id="reportTitle">Informe</h2></div>
+     <span class="report-ok">Cálculo realizado</span></div>
+   <article class="finish-card">
+    <div class="finish-subtitle">FINALIZACIÓN ESTIMADA · DÍA S</div>
+    <div class="finish-date" id="finishDate">—</div>
+    <div class="finish-time" id="finishTime">—</div>
+    <div class="finish-meta" id="finishMeta">—</div>
+   </article>
+
+   <div class="panel report-panel">
+    <h3>Situación del pedido</h3>
+    <p class="reading-label" id="readingLabel"></p><p class="reading-label" id="calendarApplied"></p>
+    <div class="stats-grid">
+     <div class="stat"><span>Pedido</span><strong id="statOrder">—</strong><small>piezas</small></div>
+     <div class="stat"><span>Fabricadas</span><strong id="statProduced">—</strong><small>piezas</small></div>
+     <div class="stat accent"><span>Pendientes</span><strong id="statPending">—</strong><small>piezas</small></div>
+     <div class="stat"><span>Ritmo</span><strong id="statRate">—</strong><small>piezas/hora</small></div>
+    </div>
+    <div class="progress-meta"><span>Avance del pedido</span><strong id="percentLabel">—</strong></div>
+    <div class="progress-track"><div id="progressFill"></div></div>
+    <div class="pack-info" id="packingInfo"></div>
+   </div>
+
+   <div class="panel report-panel">
+    <h3>Matriz de cortes a las 06:00</h3>
+    <p class="muted">Se toma como día S el día de finalización calculado. Las cifras respetan los fines de semana y las paradas adicionales del calendario.</p>
+    <div class="table-scroll">
+     <table class="cut-table" id="cutTable"><thead><tr>
+      <th>Corte</th><th>Fecha y hora</th><th>Resultado</th><th>Equivalencia</th><th>Total fabricadas</th>
+     </tr></thead><tbody id="cutRows"></tbody></table>
+    </div>
+    <p class="help">P = palets completos; C = cajas completas adicionales; uds = piezas sueltas. Las cifras son teóricas y consideran inyectadas enteras. Después de completar el pedido, se supone que el molde sigue en marcha hasta la hora del corte.</p>
+   </div>
+
+   <div class="panel report-panel compact-panel">
+    <h3>Datos técnicos</h3>
+    <div class="tech-list" id="technicalData"></div>
+   </div>
+   <div class="action-bar">
+    <button type="button" class="outline" id="copyBtn">Copiar informe</button>
+    <button type="button" class="outline" id="mailBtn">Correo a Daniel</button>
+    <button type="button" class="outline" id="shareBtn">Compartir</button>
+   </div>
+   <p class="mail-note">«Correo a Daniel» prepara el mensaje en tu aplicación de correo. No lo envía automáticamente.</p>
+   <div id="actionStatus" class="action-status" role="status"></div>
+  </section>
+  <footer>PREVISIÓN DE PRODUCCIÓN · TOTEMPLAST · Uso local, sin servidores</footer>
+ </main>
+ <script src="app.js"></script>
+ <script>
+/* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
+(function () {
+  'use strict';
+  const E = window.TotemplastEngine;
+  const STORAGE_KEY = 'totemplast_previsiones_v1';
+  const CALENDAR_KEY = 'totemplast_calendario_v2';
+  const MIGRATION_KEY = 'totemplast_datos_v3_aplicados';
+  const $ = (id) => document.getElementById(id);
+  const dataIds = ['reference','orderPieces','cavities','injectionsPerHour','piecesPerBox','boxesPerPallet',
+    'producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'];
+  const integerLocale = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0, useGrouping:'always' });
+  const decimalLocale = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping:'always' });
+  const dateLongFormat = new Intl.DateTimeFormat('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const dateShortFormat = new Intl.DateTimeFormat('es-ES', {weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  const hmFormat = new Intl.DateTimeFormat('es-ES',{hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+  let mode = 'boxes';
+  let lastReport = null;
+  let savingDisabled = false;
+  let stored = loadStorage();
+  migrateSavedReferences();
+  let calendarState = loadCalendarState();
+  let calendarMonth = new Date(new Date().getFullYear(),new Date().getMonth(),1);
+
+  function n(value) { return integerLocale.format(value); }
+  function nd(value) { return decimalLocale.format(value); }
+  function cap(value) { return value.charAt(0).toUpperCase() + value.slice(1); }
+  function dateLong(date) { return cap(dateLongFormat.format(date)); }
+  function dateShort(date) { return cap(dateShortFormat.format(date)); }
+  function hhmm(date) { return hmFormat.format(date); }
+  function roundedMinute(date) { return new Date(Math.round(date.getTime()/60000)*60000); }
+  function timeLabel(date) { return dateLong(date)+', '+hhmm(date); }
+  function toLocalInputDate(date) {
+    const pad=(x)=>String(x).padStart(2,'0');
+    return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate())+'T'+pad(date.getHours())+':'+pad(date.getMinutes());
+  }
+  function escape(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function text(id, value) { $(id).textContent = value; }
+  function readNonNegative(id, name) {
+    const str = $(id).value;
+    if (str === '') throw new Error('Indica '+name+'.');
+    const val = Number(str);
+    if (!Number.isSafeInteger(val) || val < 0) throw new Error(name+': introduce un numero entero mayor o igual a 0.');
+    return val;
+  }
+  function setMode(value, convert) {
+    if (convert && value !== mode) {
+      const perPal = Math.floor(Number($('boxesPerPallet').value) || 0);
+      if (mode === 'boxes' && value === 'pallets' && perPal > 0) {
+        const total = Math.max(0, Number($('producedBoxes').value)||0);
+        $('producedPallets').value = Math.floor(total/perPal);
+        $('producedExtraBoxes').value = total%perPal;
+      } else if (mode === 'pallets' && value === 'boxes' && perPal > 0) {
+        $('producedBoxes').value = Math.max(0,(Number($('producedPallets').value)||0)*perPal+(Number($('producedExtraBoxes').value)||0));
+      }
+    }
+    mode = value;
+    $('totalBoxesInputs').classList.toggle('hidden',mode !== 'boxes');
+    $('palletInputs').classList.toggle('hidden',mode !== 'pallets');
+    $('totalBoxesMode').classList.toggle('active',mode === 'boxes');
+    $('palletMode').classList.toggle('active',mode === 'pallets');
+    $('totalBoxesMode').setAttribute('aria-pressed',String(mode === 'boxes'));
+    $('palletMode').setAttribute('aria-pressed',String(mode === 'pallets'));
+    invalidate();
+  }
+  function setTimeMode(past) {
+    $('timePast').checked = past;
+    $('timeNow').checked = !past;
+    $('pastReadingField').classList.toggle('hidden',!past);
+    if (past && !$('readingDateTime').value) $('readingDateTime').value=toLocalInputDate(new Date());
+    invalidate();
+  }
+  function invalidate() {
+    lastReport = null;
+    $('results').classList.add('hidden');
+    $('errorBox').classList.add('hidden');
+    text('actionStatus','');
+  }
+  function rateValue() {
+    const raw=$('injectionsPerHour').value.trim().replace(/\s/g,'').replace(',', '.');
+    if (!raw || !Number.isFinite(Number(raw)) || Number(raw)<=0) {
+      throw new Error('Introduce el ciclo actual en segundos o las inyectadas/hora; el dato es obligatorio en cada lectura.');
+    }
+    return Number(raw);
+  }
+  function getInput() {
+    const fullBoxes = mode === 'boxes'
+      ? readNonNegative('producedBoxes','las cajas fabricadas')
+      : readNonNegative('producedPallets','los palets fabricados') * Number($('boxesPerPallet').value) +
+          readNonNegative('producedExtraBoxes','las cajas adicionales');
+    if (!Number.isSafeInteger(fullBoxes)) throw new Error('La cantidad de cajas no es valida.');
+    const d = $('timePast').checked ? new Date($('readingDateTime').value) : new Date();
+    return {
+      reference:$('reference').value,
+      orderPieces:$('orderPieces').value,
+      cavities:$('cavities').value,
+      injectionsPerHour:$('rateUnit').value === 'seconds' ? 3600/rateValue() : rateValue(),
+      measuredRateValue:rateValue(), measuredRateUnit:$('rateUnit').value,
+      piecesPerBox:$('piecesPerBox').value,
+      boxesPerPallet:$('boxesPerPallet').value,
+      fullBoxes,
+      loosePieces:readNonNegative('producedLoosePieces','las piezas sueltas'),
+      readAt:d
+    };
+  }
+  function readTime(value) {
+    const duration = Math.max(0,Math.round(value/60000));
+    return Math.floor(duration/60)+' h '+(duration%60)+' min';
+  }
+  function shortPack(b) {
+    return n(b.pallets)+' P + '+n(b.boxes)+' C + '+n(b.loose)+' uds';
+  }
+  function detailedPack(b) {
+    const p=b.pallets, bx=b.boxes, l=b.loose;
+    if (p===0 && bx===0 && l===0) return '0 piezas';
+    let out='';
+    if (p) out+=n(p)+' palet'+(p!==1?'s':'')+' completo'+(p!==1?'s':'');
+    if (bx || l) {
+      if (out) out+=' + ';
+      if (bx) {
+        out+='1 palet parcial ('+n(bx)+' caja'+(bx!==1?'s':'')+' completa'+(bx!==1?'s':'');
+        if (l) out+=' y '+n(l)+' pieza'+(l!==1?'s':'')+' en caja parcial';
+        out+=')';
+      } else {
+        out+=n(l)+' pieza'+(l!==1?'s':'')+' en caja parcial';
+      }
+    }
+    return out;
+  }
+  function showReport(r) {
+    const isDone=r.isAlreadyComplete;
+    const shownFinish = roundedMinute(r.finishAt);
+    text('reportTitle',r.reference+' - Previsión de producción');
+    text('finishDate',isDone?'Pedido ya completado':dateLong(shownFinish));
+    text('finishTime',isDone?'—':hhmm(shownFinish)+' h');
+    text('finishMeta', isDone
+      ? 'Las piezas registradas ya alcanzan o superan el pedido; no puede deducirse cuándo terminó anteriormente.'
+      : 'Quedan '+readTime(r.productiveMsPending)+' de trabajo efectivo ('+n(r.injectionsPending)+' inyectadas).'+
+        (r.expectedOverrunAtFinish?' Se producirán '+n(r.expectedOverrunAtFinish)+' piezas adicionales en la última inyectada.':''));
+    text('readingLabel','Lectura: '+timeLabel(r.readAt));
+    text('calendarApplied','Calendario aplicado: '+calendarSummary(r.calendar));
+    text('statOrder',n(r.orderPieces));
+    text('statProduced',n(r.produced));
+    text('statPending',n(r.piecesPending));
+    text('statRate',nd(r.piecesPerHour));
+    text('percentLabel',nd(r.completedPercent)+' %');
+    $('progressFill').style.width=r.completedPercent.toFixed(4)+'%';
+    $('packingInfo').innerHTML = [
+      ['Fabricadas', detailedPack(r.breakdownProduced)],
+      ['Pendientes', detailedPack(r.breakdownPending)],
+      ['Cajas hechas', n(r.breakdownProduced.totalFullBoxes)+' cajas completas'+(r.breakdownProduced.loose?' y '+n(r.breakdownProduced.loose)+' piezas sueltas':'')],
+      ['Equivalencias', n(r.piecesPerPallet)+' piezas/palet · '+n(r.piecesPerBox)+' piezas/caja']
+    ].map(kv=>'<div class="pi-row"><span>'+escape(kv[0])+'</span><strong>'+escape(kv[1])+'</strong></div>').join('');
+    const rowNames = {'-2':'S − 2 días','-1':'S − 1 día','0':'Día S','1':'S + 1 día'};
+    $('cutRows').innerHTML = r.scenarios.map(s=>{
+      const date='<div class="cut-date">'+escape(dateShort(s.at))+'<small>06:00 h'+(s.stopped?' · Parada':'')+'</small></div>';
+      if (!s.applicable) return '<tr><td>'+rowNames[String(s.deltaDays)]+'</td><td>'+date+'</td><td class="muted-cell" colspan="3">No aplicable: corte anterior a la lectura registrada.</td></tr>';
+      const kind = s.missing ? 'missing' : s.excess ? 'excess' : 'exact';
+      const description = s.missing ? 'Faltan' : s.excess ? 'Sobran' : 'Pedido exacto';
+      const amount = s.missing ? s.missing : s.excess;
+      const partial=(s.breakdownDifference.boxes || s.breakdownDifference.loose)?'<small class="partial-note">Incluye 1 palet parcial</small>':'';
+      return '<tr><td>'+rowNames[String(s.deltaDays)]+'</td><td>'+date+'</td><td><span class="cut-value '+kind+'">'+
+        description+' '+n(amount)+' uds</span></td><td>'+escape(shortPack(s.breakdownDifference))+partial+'</td><td>'+n(s.projectedTotal)+' uds</td></tr>';
+    }).join('');
+    const tech=[
+      ['Referencia',r.reference],['Unidades del pedido',n(r.orderPieces)],
+      ['Cavidades activas',n(r.cavities)],['Medición introducida',nd(r.measuredRateValue)+(r.measuredRateUnit==='seconds'?' segundos/ciclo':' inyectadas/h')],['Inyectadas por hora',nd(r.injectionsPerHour)],
+      ['Piezas por inyectada',n(r.cavities)],['Ritmo efectivo',nd(r.piecesPerHour)+' piezas/h'],
+      ['Piezas por caja',n(r.piecesPerBox)],['Cajas por palet',n(r.boxesPerPallet)],
+      ['Piezas por palet',n(r.piecesPerPallet)],['Cajas completas fabricadas',n(r.fullBoxes)],
+      ['Tiempo productivo pendiente',readTime(r.productiveMsPending)],['Lectura de referencia',timeLabel(r.readAt)],
+      ['Paradas adicionales',calendarSummary(r.calendar)]
+    ];
+    $('technicalData').innerHTML=tech.map(kv=>'<div><span>'+escape(kv[0])+'</span><strong>'+escape(kv[1])+'</strong></div>').join('');
+    $('results').classList.remove('hidden');
+  }
+  function formatReport(r) {
+    const finish = roundedMinute(r.finishAt);
+    const lines=[
+      r.reference+' - Previsión de producción',
+      '',
+      'LECTURA: '+timeLabel(r.readAt),
+      'PEDIDO: '+n(r.orderPieces)+' piezas',
+      'CAVIDADES: '+n(r.cavities)+' | MEDICION: '+nd(r.measuredRateValue)+(r.measuredRateUnit==='seconds'?' segundos/ciclo':' inyectadas/h')+' | INYECTADAS/H: '+nd(r.injectionsPerHour)+' | PIEZAS/H: '+nd(r.piecesPerHour),
+      'EMBALAJE: '+n(r.piecesPerBox)+' piezas/caja | '+n(r.boxesPerPallet)+' cajas/palet | '+n(r.piecesPerPallet)+' piezas/palet',
+      'FABRICADAS: '+n(r.produced)+' piezas | '+detailedPack(r.breakdownProduced),
+      'PENDIENTES: '+n(r.piecesPending)+' piezas | '+detailedPack(r.breakdownPending),
+      'HORAS PRODUCTIVAS PENDIENTES: '+readTime(r.productiveMsPending),
+      'CALENDARIO: '+calendarSummary(r.calendar),
+      '',
+      r.isAlreadyComplete ? 'PEDIDO YA COMPLETADO EN LA LECTURA' : 'FINALIZACION PREVISTA: '+timeLabel(finish),
+      '',
+      'MATRIZ DE CORTES (06:00 H):'
+    ];
+    r.scenarios.forEach(s=>{
+      const tag = s.deltaDays === 0 ? 'S' : s.deltaDays < 0 ? 'S'+s.deltaDays : 'S+'+s.deltaDays;
+      if (!s.applicable) lines.push(tag+' | '+timeLabel(s.at)+' | No aplicable: anterior a la lectura');
+      else lines.push(tag+' | '+timeLabel(s.at)+' | '+
+        (s.missing?'FALTAN '+n(s.missing):s.excess?'SOBRAN '+n(s.excess):'PEDIDO EXACTO')+' piezas | '+
+        shortPack(s.breakdownDifference)+' | Total '+n(s.projectedTotal)+' piezas');
+    });
+    lines.push('', 'Horario TOTEMPLAST: lunes 06:00 a sabado 06:00, produccion ininterrumpida.');
+    r.calendar.holidays.forEach(day=>lines.push('FESTIVO: '+day+' (parada desde la vispera a las 06:00 hasta el dia siguiente a las 06:00).'));
+    r.calendar.pauses.forEach(p=>lines.push('PARADA ADICIONAL: '+(p.label||'Cierre')+' | '+p.start+' -> '+p.end));
+    lines.push('Cifras teoricas basadas en inyectadas completas. El exceso supone continuar produciendo.');
+    return lines.join('\n');
+  }
+  function showError(err) {
+    text('errorBox',err.message||String(err));
+    $('errorBox').classList.remove('hidden');
+    $('errorBox').scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  function calculate(suppressScroll) {
+    $('errorBox').classList.add('hidden');
+    try {
+      const data=getInput();
+      const r=E.forecast(data,data.readAt,calendarState);
+      r.measuredRateValue=data.measuredRateValue; r.measuredRateUnit=data.measuredRateUnit;
+      lastReport=r;
+      showReport(r);
+      saveResult(r);
+      if (suppressScroll !== true) $('results').scrollIntoView({block:'start',behavior:'smooth'});
+    } catch (err) {
+      invalidate();
+      showError(err);
+    }
+  }
+  function loadStorage() {
+    try { const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); return x && typeof x==='object' && !Array.isArray(x)?x:{}; }
+    catch (_) { return {}; }
+  }
+  function persist() {
+    if(savingDisabled) return;
+    try { localStorage.setItem(STORAGE_KEY,JSON.stringify(stored)); }
+    catch(_) { text('actionStatus','El dispositivo no ha permitido guardar las referencias. Los calculos siguen funcionando.'); }
+  }
+  function refreshReferences(selected) {
+    const sel=$('savedReferences');
+    sel.innerHTML='<option value="">Selecciona una referencia</option>';
+    Object.keys(stored).sort((a,b)=>a.localeCompare(b,'es')).forEach(ref=>{
+      const option=document.createElement('option'); option.value=ref; option.textContent=ref;
+      sel.appendChild(option);
+    });
+    sel.value=selected && stored[selected]?selected:'';
+    $('deleteBtn').disabled=!sel.value;
+  }
+  // En una actualizacion anterior pudo quedar REE 11 como ensayo. Nunca era un pedido real.
+  // Limpieza una sola vez; despues los datos que escriba el usuario se respetan.
+  function migrateSavedReferences() {
+    try {
+      if (localStorage.getItem(MIGRATION_KEY) === '1') return;
+      for (const ref of Object.keys(stored)) {
+        const canonical=ref.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+        if (canonical === 'REE11' || canonical === 'R11') delete stored[ref];
+      }
+      if (!stored['DSM 113']) {
+        // Unica ficha inicial: lectura REAL facilitada el 13/10/2026 a las 09:31.
+        // El ciclo de 67,2 segundos es un recordatorio, NO se rellena automaticamente.
+        stored['DSM 113']={
+          reference:'DSM 113', orderPieces:6048, cavities:1,
+          injectionsPerHour:3600/67.2, measuredRateValue:67.2, measuredRateUnit:'seconds', piecesPerBox:28, boxesPerPallet:18,
+          fullBoxes:42, loosePieces:0, readAt:'2026-10-13T07:31:00.000Z', mode:'pallets'
+        };
+      } else {
+        // Actualizacion del ultimo ritmo indicado por el usuario; nunca se usa sin escribirlo.
+        stored['DSM 113'].injectionsPerHour=3600/67.2;
+        stored['DSM 113'].measuredRateValue=67.2;
+        stored['DSM 113'].measuredRateUnit='seconds';
+      }
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(stored));
+      localStorage.setItem(MIGRATION_KEY,'1');
+    } catch (_) { /* Los calculos siguen disponibles si se bloquea el almacenamiento. */ }
+  }
+  function showRateHint(ref) {
+    const saved=stored[String(ref||'').trim().toUpperCase()];
+    const prevUnit=saved && saved.measuredRateUnit==='seconds' ? 'seconds':'per_hour';
+    const previous=saved && Number(prevUnit==='seconds'?saved.measuredRateValue:(saved.measuredRateValue||saved.injectionsPerHour));
+    const meaning=prevUnit==='seconds' ? ' s/ciclo':' inyectadas/h';
+    const info=Number.isFinite(previous) && previous>0
+      ? 'Última medición: '+nd(previous)+meaning+'. Escribe la medición actual; NO se rellena automáticamente.'
+      : 'Introduce siempre el ciclo (segundos/inyectada) o las inyectadas/hora. No se reutiliza el anterior.';
+    text('previousRate',info);
+  }
+  function saveResult(r) {
+    stored[r.reference]={ reference:r.reference,orderPieces:r.orderPieces,cavities:r.cavities,
+      injectionsPerHour:r.injectionsPerHour,measuredRateValue:r.measuredRateValue,measuredRateUnit:r.measuredRateUnit,piecesPerBox:r.piecesPerBox,
+      boxesPerPallet:r.boxesPerPallet,fullBoxes:r.fullBoxes,loosePieces:r.loosePieces,
+      readAt:r.readAt.toISOString(),mode:mode };
+    persist();refreshReferences(r.reference);showRateHint(r.reference);
+  }
+  function loadReference(ref) {
+    if (!stored[ref]) return;
+    const a=stored[ref];
+    for(const id of ['reference','orderPieces','cavities','piecesPerBox','boxesPerPallet'])
+      $(id).value=a[id];
+    // El ritmo es siempre una lectura nueva; el ultimo queda solo como sugerencia.
+    $('rateUnit').value=a.measuredRateUnit==='seconds'?'seconds':'per_hour';
+    $('injectionsPerHour').value='';
+    showRateHint(ref);
+    $('producedBoxes').value=a.fullBoxes;
+    const perPal=Number(a.boxesPerPallet)||1;
+    $('producedPallets').value=Math.floor(a.fullBoxes/perPal);
+    $('producedExtraBoxes').value=a.fullBoxes%perPal;
+    $('producedLoosePieces').value=a.loosePieces;
+    setMode(a.mode==='pallets'?'pallets':'boxes',false);
+    $('readingDateTime').value=toLocalInputDate(new Date(a.readAt));
+    setTimeMode(true); // No transformar una lectura vieja en una lectura de ahora.
+    refreshReferences(ref);
+    invalidate();
+  }
+  function newReference() {
+    for(const id of ['reference','orderPieces','cavities','injectionsPerHour','piecesPerBox','boxesPerPallet'])$(id).value='';
+    for(const id of ['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'])$(id).value='0';
+    $('rateUnit').value='seconds';$('readingDateTime').value=''; setMode('boxes',false);setTimeMode(false);refreshReferences('');showRateHint('');invalidate();
+    $('reference').focus();
+  }
+  function loadExample() {
+    if (stored['DSM 113']) {
+      loadReference('DSM 113');
+    } else {
+      // Si el usuario borro la ficha, el boton permite recuperarla sin guardarla por si solo.
+      newReference();
+      Object.entries({reference:'DSM 113',orderPieces:'6048',cavities:'1',piecesPerBox:'28',boxesPerPallet:'18',
+        producedBoxes:'42',producedPallets:'2',producedExtraBoxes:'6',producedLoosePieces:'0'}).forEach(([id,v])=>$(id).value=v);
+      setMode('pallets',false);
+      $('readingDateTime').value='2026-10-13T09:31';setTimeMode(true);
+      $('rateUnit').value='seconds';
+      text('previousRate','Última medición conocida: 67,2 segundos/ciclo. Escribe el dato actual.');
+    }
+    // Intencionadamente NO calcula ni asigna automaticamente las inyectadas/hora.
+    $('injectionsPerHour').value='';
+    $('injectionsPerHour').focus();
+  }
+  function setStatus(message) { text('actionStatus',message); }
+  async function copyReport() {
+    if(!lastReport) return;
+    const content=formatReport(lastReport);
+    if(window.Android && typeof window.Android.copyText==='function') {
+      window.Android.copyText(content);setStatus('Informe copiado.');return;
+    }
+    try {
+      if(navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        const ta=document.createElement('textarea');ta.value=content;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);
+        ta.select();if(!document.execCommand('copy')) throw new Error('No se pudo copiar');ta.remove();
+      }
+      setStatus('Informe copiado al portapapeles.');
+    } catch(e) {setStatus('No se pudo copiar. Puedes usar la funcion Compartir.');}
+  }
+  function mailReport() {
+    if(!lastReport)return;
+    const subject=lastReport.reference+' - Previsión de producción - '+dateShort(lastReport.readAt);
+    const body=formatReport(lastReport);
+    if(window.Android && typeof window.Android.prepareMail==='function'){
+      window.Android.prepareMail(subject,body);return;
+    }
+    location.href='mailto:daniel@totemplast.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  }
+  async function shareReport() {
+    if(!lastReport)return;
+    const report=formatReport(lastReport);
+    if(window.Android && typeof window.Android.shareText==='function'){
+      window.Android.shareText(report);return;
+    }
+    if(navigator.share){try{await navigator.share({title:lastReport.reference+' - Previsión de producción',text:report});return;}
+      catch(err){if(err.name==='AbortError')return;}}
+    await copyReport();
+  }
+  // Calendario global: festivos sobre el horario permanente, y cierres con horas exactas.
+  function loadCalendarState() {
+    try {
+      const value=JSON.parse(localStorage.getItem(CALENDAR_KEY)||'{}');
+      if (!value || typeof value!=='object') return {holidays:[],pauses:[]};
+      const holidays=Array.isArray(value.holidays)?value.holidays.filter(d=>typeof d==='string'):[];
+      const pauses=Array.isArray(value.pauses)?value.pauses.filter(p=>p && typeof p.start==='string' && typeof p.end==='string'):[];
+      const result={holidays:[...new Set(holidays)].sort(),pauses};
+      E.normalizeClosures(result);
+      return result;
+    } catch (_) {return {holidays:[],pauses:[]};}
+  }
+  function calendarSummary(cal) {
+    const f=cal.holidays.length, p=cal.pauses.length;
+    if (!f && !p) return 'Horario semanal habitual, sin paradas adicionales';
+    return 'Horario semanal + '+n(f)+' festivo'+(f===1?'':'s')+' + '+n(p)+' parada'+(p===1?'':'s')+' especial'+(p===1?'':'es');
+  }
+  function isoLocalDay(date) {return toLocalInputDate(date).slice(0,10);}
+  function holidayStop(iso) {
+    const base=E.parseLocalDate(iso), start=new Date(base.getTime()), end=new Date(base.getTime());
+    start.setDate(start.getDate()-1);end.setDate(end.getDate()+1);
+    return 'Paro: '+dateShort(start)+' 06:00 \u2192 '+dateShort(end)+' 06:00';
+  }
+  function calendarChanged() {
+    E.normalizeClosures(calendarState);
+    try {localStorage.setItem(CALENDAR_KEY,JSON.stringify(calendarState));}
+    catch(_) {showCalendarError('No se han podido guardar las paradas, aunque se usan para el calculo actual.');}
+    renderCalendar();
+    if (lastReport) calculate(true);
+  }
+  function showCalendarError(message) {
+    text('calendarError',message);
+    $('calendarError').classList.remove('hidden');
+  }
+  function renderCalendar() {
+    const y=calendarMonth.getFullYear(),m=calendarMonth.getMonth();
+    text('calMonthTitle',cap(new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric'}).format(calendarMonth)));
+    const first=new Date(y,m,1), blank=(first.getDay()+6)%7;
+    const days=new Date(y,m+1,0).getDate();
+    const today=isoLocalDay(new Date());
+    let html='';
+    for(let i=0;i<blank;i++)html+='<span class="cal-spacer" aria-hidden="true"></span>';
+    for(let d=1;d<=days;d++){
+      const date=new Date(y,m,d),key=isoLocalDay(date);
+      const selected=calendarState.holidays.includes(key);
+      const classes='cal-day'+(date.getDay()===0||date.getDay()===6?' weekend':'')+(selected?' holiday':'')+(key===today?' today':'');
+      html+='<button type="button" class="'+classes+'" data-holiday-date="'+key+'" aria-label="'+escape(dateLong(date))+(selected?', festivo marcado':'')+'" aria-pressed="'+selected+'" title="'+(selected?'Desmarcar':'Marcar')+' festivo '+key+'">'+d+'</button>';
+    }
+    $('calendarGrid').innerHTML=html;
+    $('holidayList').innerHTML=calendarState.holidays.length
+      ?calendarState.holidays.map(iso=>'<div class="exception-item"><div><strong>'+escape(dateLong(E.parseLocalDate(iso)))+'</strong><small>'+escape(holidayStop(iso))+'</small></div><button type="button" class="exception-remove" data-remove-holiday="'+iso+'" aria-label="Eliminar festivo '+iso+'">\u00d7</button></div>').join('')
+      :'<p class="no-exceptions">Ning\u00fan festivo a\u00f1adido.</p>';
+    $('pauseList').innerHTML=calendarState.pauses.length
+      ?calendarState.pauses.map((p,i)=>'<div class="exception-item"><div><strong>'+escape(p.label||'Parada programada')+'</strong><small>'+escape(p.start.replace('T',' ')+' \u2192 '+p.end.replace('T',' '))+'</small></div><button type="button" class="exception-remove" data-remove-pause="'+i+'" aria-label="Eliminar parada">\u00d7</button></div>').join('')
+      :'<p class="no-exceptions">No hay paradas especiales.</p>';
+  }
+  function toggleHoliday(day){
+    const at=calendarState.holidays.indexOf(day);
+    if(at>=0)calendarState.holidays.splice(at,1);
+    else calendarState.holidays.push(day);
+    calendarState.holidays.sort();
+    $('calendarError').classList.add('hidden');
+    calendarChanged();
+  }
+  function addPause(){
+    $('calendarError').classList.add('hidden');
+    try{
+      const start=$('pauseStart').value,end=$('pauseEnd').value;
+      const pause={start,end,label:$('pauseLabel').value.trim().slice(0,80)};
+      E.normalizeClosures({holidays:calendarState.holidays,pauses:[...calendarState.pauses,pause]});
+      calendarState.pauses.push(pause);
+      calendarState.pauses.sort((a,b)=>a.start.localeCompare(b.start));
+      $('pauseStart').value='';$('pauseEnd').value='';$('pauseLabel').value='';
+      calendarChanged();
+    }catch(err){showCalendarError(err.message||String(err));}
+  }
+  $('calPrev').addEventListener('click',()=>{calendarMonth.setMonth(calendarMonth.getMonth()-1);renderCalendar();});
+  $('calNext').addEventListener('click',()=>{calendarMonth.setMonth(calendarMonth.getMonth()+1);renderCalendar();});
+  $('calendarGrid').addEventListener('click',event=>{
+    const target=event.target.closest('button[data-holiday-date]');
+    if(target)toggleHoliday(target.getAttribute('data-holiday-date'));
+  });
+  $('holidayList').addEventListener('click',event=>{
+    const target=event.target.closest('button[data-remove-holiday]');
+    if(target)toggleHoliday(target.getAttribute('data-remove-holiday'));
+  });
+  $('pauseList').addEventListener('click',event=>{
+    const target=event.target.closest('button[data-remove-pause]');
+    if(!target)return;
+    const i=Number(target.getAttribute('data-remove-pause'));
+    if(Number.isInteger(i) && i>=0 && i<calendarState.pauses.length){
+      calendarState.pauses.splice(i,1);calendarChanged();
+    }
+  });
+  $('addPauseBtn').addEventListener('click',addPause);
+  renderCalendar();
+  function updateClock() {
+    const time=new Date();
+    text('clock',dateShort(time)+' · '+hhmm(time)+' h');
+  }
+  for(const id of dataIds) {
+    $(id).addEventListener('input',()=>{
+      if (id==='reference') showRateHint($('reference').value);
+      const isNewCount=['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'].includes(id);
+      // Si una previsión ya existe, modificar el avance implica una NUEVA toma:
+      // el ritmo deja de ser válido hasta que el encargado lo escriba otra vez.
+      if (isNewCount && lastReport) $('injectionsPerHour').value='';
+      if (isNewCount && $('timePast').checked){
+        setTimeMode(false);
+      }
+      invalidate();
+    });
+  }
+  $('rateUnit').addEventListener('change',()=>{
+    // Cambiar entre segundos/ciclo e inyectadas/h no puede reinterpretar el mismo numero.
+    $('injectionsPerHour').value='';
+    showRateHint($('reference').value);
+    invalidate();
+  });
+  $('readingDateTime').addEventListener('input',invalidate);
+  $('timeNow').addEventListener('change',()=>setTimeMode(false));
+  $('timePast').addEventListener('change',()=>setTimeMode(true));
+  $('totalBoxesMode').addEventListener('click',()=>setMode('boxes',true));
+  $('palletMode').addEventListener('click',()=>setMode('pallets',true));
+  $('calculateBtn').addEventListener('click',calculate);
+  $('calculateCalendarBtn').addEventListener('click',calculate);
+  $('newBtn').addEventListener('click',newReference);  $('exampleBtn').addEventListener('click',loadExample);
+  $('savedReferences').addEventListener('change',(ev)=>{
+    const ref=ev.target.value;if(ref)loadReference(ref);else $('deleteBtn').disabled=true;
+  });
+  $('deleteBtn').addEventListener('click',()=>{
+    const ref=$('savedReferences').value;
+    if(ref && window.confirm('¿Eliminar la referencia '+ref+' del dispositivo?')){
+      delete stored[ref];persist();newReference();
+    }
+  });
+  $('copyBtn').addEventListener('click',copyReport);
+  $('mailBtn').addEventListener('click',mailReport);
+  $('shareBtn').addEventListener('click',shareReport);
+  updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');
+})();
+
+</script>
+</body></html>
