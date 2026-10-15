@@ -14,10 +14,23 @@ assert(java.includes('REQUEST_PICK_FILE') && java.includes('REQUEST_SAVE_FILE'),
 assert(java.includes('shouldInterceptRequest'),'El HTML debe servirse mediante origen HTTPS local');
 assert(java.includes('android.webkit.JavascriptInterface') || java.includes('android.webkit.JavascriptInterface;'));
 assert(manifest.includes('android:label="Casa Radar"'));
-assert(/versionName\s+'1\.2\.0'/.test(gradle));
-assert(/versionCode\s+10200/.test(gradle));
+assert(/versionName\s+'1\.3\.0'/.test(gradle));
+assert(/versionCode\s+10300/.test(gradle));
+assert(html.includes("['accessibility','Accesibilidad y letra'"),'Menú de accesibilidad ausente');
+assert(html.includes('id="access-font-range"'),'Falta control global de tamaño de texto');
+assert(html.includes('localStorage.setItem(ACCESS_KEY'),'El ajuste debe persistir');
+assert(html.includes('function renderAccessibility()'),'Falta pantalla de accesibilidad');
+assert(html.includes('data-action="access-reset"'),'Falta restablecer texto');
+assert(html.includes('data-access-toggle="highContrast"'),'Falta alto contraste');
+assert(html.includes('data-access-toggle="largeControls"'),'Faltan controles grandes');
+assert(java.includes('newConfig.fontScale'),'No escucha el tamaño Android');
+assert(manifest.includes('fontScale'),'Configuración de escala Android ausente');
+const fixedFontStyles=[...html.matchAll(/font-size\s*:\s*([0-9.]+)px/g)];
+assert.equal(fixedFontStyles.length,0,'Quedan tamaños tipográficos rígidos');
+assert((html.match(/var\(--font-scale\)/g)||[]).length>=70,'No se escala toda la tipografía');
+
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
 assert(scripts.length>0,'Falta JavaScript');
 const vm=require('node:vm');
 for(const s of scripts)new vm.Script(s,{filename:'index-inline.js'});
-console.log('Pruebas de proyecto Casa Radar 1.2.0: OK');
+console.log('Pruebas de proyecto Casa Radar 1.3.0 (accesibilidad): OK');

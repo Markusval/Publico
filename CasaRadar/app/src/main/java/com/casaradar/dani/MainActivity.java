@@ -57,7 +57,8 @@ public final class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportMultipleWindows(false);
         settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setTextZoom(100);
+        // Respect the Android system font-size setting in addition to the app control.
+        settings.setTextZoom(Math.round(100f * getResources().getConfiguration().fontScale));
 
         // Exposed only to the trusted local app; external links open in other apps.
         webView.addJavascriptInterface(new NativeBridge(), "CasaRadarNative");
@@ -211,6 +212,9 @@ public final class MainActivity extends Activity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        if (webView != null) {
+            webView.getSettings().setTextZoom(Math.round(100f * newConfig.fontScale));
+        }
     }
 
     @Override

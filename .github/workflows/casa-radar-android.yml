@@ -1,9 +1,9 @@
-name: Casa Radar 1.2.0 - Android APK
+name: Casa Radar 1.3.0 - Android APK
 on:
   push:
     branches:
       - main
-      - casaradar-v1.2.0
+      - casaradar-v1.3.0
     paths:
       - 'CasaRadar/**'
       - '.github/workflows/casa-radar-android.yml'
@@ -34,12 +34,12 @@ jobs:
           gradle-version: '8.9'
       - name: Pruebas basicas
         run: node tests/smoke.cjs
-      - name: Compilar APK instalable v1.2.0
+      - name: Compilar APK instalable v1.3.0
         run: gradle --no-daemon --stacktrace :app:assembleDebug
-      - name: Publicar APK v1.2.0
+      - name: Publicar APK v1.3.0
         uses: actions/upload-artifact@v4
         with:
-          name: CasaRadar-v1.2.0-APK
+          name: CasaRadar-v1.3.0-APK
           path: CasaRadar/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
