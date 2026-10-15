@@ -1,4 +1,4 @@
-name: TOTEMPLAST Android 1.0 - APK
+name: TOTEMPLAST Android 1.1 - APK
 on:
   workflow_dispatch:
   push:
@@ -32,9 +32,9 @@ jobs:
           gradle-version: '8.9'
       - name: Compilar APK instalable
         run: gradle --no-daemon --stacktrace :app:assembleDebug
-      - name: Publicar APK v1.0
+      - name: Publicar APK v1.1
         uses: actions/upload-artifact@v4
         with:
-          name: TOTEMPLAST-Prevision-v1.0-APK
+          name: TOTEMPLAST-Planificador-Produccion-v1.1-APK
           path: totemplast-prevision-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
