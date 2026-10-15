@@ -34,6 +34,7 @@
     </div>
    </div>
 
+   <p class="required-hint"><span class="required-hint-symbol" aria-hidden="true"></span> Los campos obligatorios vacíos aparecen con borde rojo.</p>
    <div class="form-grid">
     <div class="field"><label for="reference">Referencia <span class="req">*</span></label>
       <input id="reference" type="text" autocapitalize="characters" placeholder="Ej. DSM 113" autocomplete="off" maxlength="90"></div>
@@ -73,7 +74,7 @@
       <input id="producedBoxes" type="number" min="0" step="1" inputmode="numeric" placeholder="42" value="0"></div>
    </div>
    <div id="palletInputs" class="form-grid hidden">
-    <div class="field"><label for="producedPallets">Palets completos</label>
+    <div class="field"><label for="producedPallets">Palets completos <span class="req">*</span></label>
       <input id="producedPallets" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
     <div class="field"><label for="producedExtraBoxes">Cajas fuera de palets completos</label>
       <input id="producedExtraBoxes" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
@@ -88,7 +89,7 @@
     <label class="option"><input type="radio" name="readingTimeMode" id="timeNow" value="now" checked><span><strong>Ahora</strong><small>Usar reloj del móvil al calcular</small></span></label>
     <label class="option"><input type="radio" name="readingTimeMode" id="timePast" value="past"><span><strong>Lectura anterior</strong><small>Indicar fecha y hora de la toma</small></span></label>
    </div>
-   <div id="pastReadingField" class="field historical hidden"><label for="readingDateTime">Fecha y hora de la lectura</label>
+   <div id="pastReadingField" class="field historical hidden"><label for="readingDateTime">Fecha y hora de la lectura <span class="req">*</span></label>
      <input type="datetime-local" id="readingDateTime"></div>
    <p class="help">Al recuperar una referencia guardada, se conserva la fecha de su última lectura. Si actualizas las cajas fabricadas, se activa «Ahora».</p>
 
@@ -189,11 +190,13 @@
  </main>
  <script src="app.js"></script>
  <script src="catalogo-referencias.js"></script>
+ <script src="validacion-obligatorios.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
 (function () {
   'use strict';
   const E = window.TotemplastEngine;
+  const Validation = window.TotemplastValidation;
   const STORAGE_KEY = 'totemplast_previsiones_v1';
   const CALENDAR_KEY = 'totemplast_calendario_v2';
   const MIGRATION_KEY = 'totemplast_datos_v3_aplicados';
@@ -230,6 +233,28 @@
     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
   function text(id, value) { $(id).textContent = value; }
+  // Los campos opcionales vacíos equivalen a 0. Su ausencia nunca se marca en rojo.
+  function readOptionalNonNegative(id, name) {
+    if ($(id).value.trim() === '') return 0;
+    return readNonNegative(id, name);
+  }
+  function updateRequiredBorders() {
+    const required = Validation.getRequiredIds(mode, $('timePast').checked);
+    const missing = new Set(Validation.getMissingIds(
+      required,
+      Object.fromEntries(required.map(id => [id, $(id).value]))
+    ));
+    for (const id of Validation.ALL_REQUIRED_IDS) {
+      const field = $(id);
+      const isRequired = required.includes(id);
+      const isMissing = isRequired && missing.has(id);
+      field.required = isRequired;
+      field.classList.toggle('missing-required', isMissing);
+      if (isMissing) field.setAttribute('aria-invalid', 'true');
+      else field.removeAttribute('aria-invalid');
+    }
+    return [...missing];
+  }
   function readNonNegative(id, name) {
     const str = $(id).value;
     if (str === '') throw new Error('Indica '+name+'.');
@@ -265,6 +290,7 @@
     invalidate();
   }
   function invalidate() {
+    updateRequiredBorders();
     lastReport = null;
     $('results').classList.add('hidden');
     $('errorBox').classList.add('hidden');
@@ -281,7 +307,7 @@
     const fullBoxes = mode === 'boxes'
       ? readNonNegative('producedBoxes','las cajas fabricadas')
       : readNonNegative('producedPallets','los palets fabricados') * Number($('boxesPerPallet').value) +
-          readNonNegative('producedExtraBoxes','las cajas adicionales');
+          readOptionalNonNegative('producedExtraBoxes','las cajas adicionales');
     if (!Number.isSafeInteger(fullBoxes)) throw new Error('La cantidad de cajas no es valida.');
     const d = $('timePast').checked ? new Date($('readingDateTime').value) : new Date();
     return {
@@ -293,7 +319,7 @@
       piecesPerBox:$('piecesPerBox').value,
       boxesPerPallet:$('boxesPerPallet').value,
       fullBoxes,
-      loosePieces:readNonNegative('producedLoosePieces','las piezas sueltas'),
+      loosePieces:readOptionalNonNegative('producedLoosePieces','las piezas sueltas'),
       readAt:d
     };
   }
@@ -407,6 +433,11 @@
   function calculate(suppressScroll) {
     $('errorBox').classList.add('hidden');
     try {
+      const missing = updateRequiredBorders();
+      if (missing.length) {
+        $(missing[0]).focus();
+        throw new Error('Faltan datos obligatorios. Completa las casillas con borde rojo.');
+      }
       const data=getInput();
       const r=E.forecast(data,data.readAt,calendarState);
       r.measuredRateValue=data.measuredRateValue; r.measuredRateUnit=data.measuredRateUnit;
@@ -722,7 +753,7 @@
   $('copyBtn').addEventListener('click',copyReport);
   $('mailBtn').addEventListener('click',mailReport);
   $('shareBtn').addEventListener('click',shareReport);
-  updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');
+  updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');updateRequiredBorders();
 })();
 
 </script>

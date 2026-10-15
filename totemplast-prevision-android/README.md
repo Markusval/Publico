@@ -1,24 +1,26 @@
-# Planificador Producción Totemplast — Android v1.1
+# Planificador Producción Totemplast — Android v1.2
 
-Aplicación Android autónoma de planificación de producción para inyección de plásticos, sin IA ni conexión a Internet.
+Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 
-## Identidad y actualización v1.1
-- Nombre visible en Android: **Planificador Producción Totemplast**.
-- Icono de la aplicación: logo **PES Planificador Producción** proporcionado por TOTEMPLAST.
-- VersionName: **1.1** y versionCode: **2**.
-- Paquete conservado: `com.totemplast.prevision` para no alterar la identidad de la instalación.
+## Nuevo en la v1.2
+- Los campos **obligatorios vacíos** aparecen desde el inicio con un borde **rojo de 2 px**, que desaparece al introducir un valor.
+- Al borrar un dato obligatorio, su borde rojo reaparece de inmediato, también si se trata del ciclo actual.
+- Obligatorios: referencia, pedido total, cavidades, ciclo/inyectadas por hora, piezas por caja, cajas por palet y avance indicado según modo (cajas totales o palets completos). Para lecturas anteriores, fecha y hora de lectura.
+- **Opcionales y nunca marcados por estar vacíos**: cajas adicionales fuera de palets completos, piezas sueltas, motivo de parada, festivos y vacaciones.
+- Los valores `0` de cajas o palets son válidos y no se marcan como ausentes.
+- Si se intenta calcular con datos obligatorios sin rellenar, se indica el error y se enfoca el primer campo pendiente.
+- Sin cambios en las fórmulas del motor ni en el calendario habitual.
 
-## Funciones
-- Ciclo en segundos o inyectadas por hora; cavidades productivas configurables por pedido.
-- Calendario por defecto: lunes 06:00 a sábado 06:00, 24 h continuas, fin de semana parado.
-- Festivos, puentes y vacaciones editables.
-- Finalización teórica y escenarios de corte S−2, S−1, S y S+1 a las 06:00.
-- Resultado en piezas, cajas y palets completos o parciales.
-- Catálogo local de embalajes CHH-04 y DSM-117 (sin asignar automáticamente pedidos o cantidades fabricadas).
-- El ritmo debe introducirse cada vez; una medición anterior se muestra solo como orientación.
-- Envío asistido por la app de correo del dispositivo; el usuario confirma el mensaje.
+## Características conservadas
+- Nombre e icono Android: **Planificador Producción Totemplast**, logo PES.
+- Cálculos por cavidades y ciclos de inyección, calendario y festivos, matriz de cortes S-2/S-1/S/S+1.
+- Catálogo local de embalajes CHH-04 y DSM-117, sin tomar esas cantidades como pedido.
+- El ciclo se introduce de nuevo en cada previsión.
+- El email se prepara en la aplicación de correo; el usuario confirma el envío.
 
-## Compilar APK
-Cada `push` al proyecto dispara GitHub Actions. El resultado se publica en la ejecución correcta del workflow **TOTEMPLAST Android 1.1 - APK**, como artefacto **TOTEMPLAST-Planificador-Produccion-v1.1-APK**. Descarga el ZIP, extrae `app-debug.apk` e instálalo en Android.
+## Compilación
+GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.2-APK**. El archivo instalable se llama `app-debug.apk`.
 
-**Advertencia al actualizar:** las APK de depuración de GitHub Actions pueden utilizar una firma distinta en cada ejecución. Si Android rechaza la actualización, no desinstales la versión anterior hasta guardar los datos locales que quieras conservar. Una versión de distribución requiere una clave de firma persistente.
+Paquete conservado: `com.totemplast.prevision`; `versionCode 3`, `versionName 1.2`.
+
+**Nota sobre actualizaciones:** las APK de depuración creadas por ejecuciones distintas pueden estar firmadas con claves diferentes. No desinstales una versión anterior sin guardar primero los datos locales que quieras preservar.
