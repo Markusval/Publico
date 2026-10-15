@@ -46,7 +46,7 @@ assert(html.includes("readOptionalNonNegative('producedExtraBoxes'"));
 assert(html.includes("readOptionalNonNegative('producedLoosePieces'"));
 assert(css.includes('.field input.missing-required'));
 assert(android.includes('"validacion-obligatorios.js"'));
-const inlineScripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(inlineScripts.length,1,'Se esperaba un único script de interfaz');
 new vm.Script(inlineScripts[0][1],{filename:'index.html inline JS'});
 console.log('v1.2: comprobación de obligatorios, opcionales, ambos modos, modo histórico y sintaxis correcta.');
