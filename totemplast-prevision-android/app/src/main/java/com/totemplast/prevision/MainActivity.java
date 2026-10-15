@@ -26,7 +26,7 @@ import java.util.Arrays;
 public class MainActivity extends Activity {
  private static final String BASE="https://appassets.androidplatform.net/assets/";
  private static final String HOST="appassets.androidplatform.net";
- private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js"));
+ private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js","accesibilidad.js"));
  private WebView web;
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);

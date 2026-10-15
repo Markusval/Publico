@@ -91,3 +91,39 @@
  box-shadow:0 0 0 1px #cc34341a;
 }
 .field input.missing-required:focus{box-shadow:0 0 0 3px #cc34342b}
+
+
+/* v1.4: el contenido de TODAS las casillas se muestra mayor y en negrita.
+   Los placeholders mantienen un aspecto discreto para distinguirlos de un dato real. */
+:root{
+ --totemplast-data-size:20px;
+ --totemplast-data-weight:750;
+}
+main .field input,main .saved-flex select,main .field select.rate-unit{
+ font-size:var(--totemplast-data-size);
+ font-weight:var(--totemplast-data-weight);
+ min-height:50px;
+ line-height:1.2;
+}
+main .field input::placeholder{
+ font-size:15px;
+ font-weight:400;
+}
+main .pause-actions .field input{height:50px}
+main .field select.rate-unit{height:50px}
+.accessibility-panel{border:1px solid #cddde4;background:#f5fafb;border-radius:11px;margin:-1px 0 18px}
+.accessibility-panel summary{display:flex;align-items:center;gap:9px;padding:12px 14px;cursor:pointer;color:#20596b;font-size:13px;font-weight:750;list-style:none;min-height:46px}
+.accessibility-panel summary::-webkit-details-marker{display:none}
+.accessibility-icon{font-size:17px;font-weight:800;color:#087b87}
+.accessibility-chevron{margin-left:auto;transition:transform .2s}
+.accessibility-panel[open] .accessibility-chevron{transform:rotate(180deg)}
+.accessibility-inner{padding:0 14px 14px;border-top:1px solid #deeaee}
+.accessibility-inner p{font-size:12px;line-height:1.5;color:#52707e;margin:12px 0}
+.accessibility-controls{display:flex;gap:12px 18px;flex-wrap:wrap;align-items:end}
+.accessibility-size{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#354f5e;font-weight:700;min-width:180px;flex:1}
+.accessibility-size select{font-size:var(--totemplast-data-size);font-weight:var(--totemplast-data-weight);height:48px;max-width:100%;padding:6px 9px;border:1px solid #b5cbd6;border-radius:8px;background:white;color:#153549}
+.accessibility-bold{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:650;color:#263c4a;min-height:48px}
+.accessibility-bold input{accent-color:#087b87;width:20px;height:20px}
+.accessibility-reset{background:white;border:1px solid #aac5cc;color:#12566a;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:650;margin-top:13px}
+.accessibility-reset:focus-visible,.accessibility-panel summary:focus-visible{outline:3px solid #087b87;outline-offset:2px}
+@media(max-width:420px){.accessibility-controls{flex-direction:column;align-items:stretch;gap:8px}.accessibility-size{min-width:0}}

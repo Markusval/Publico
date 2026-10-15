@@ -26,6 +26,26 @@
    <div class="panel-head"><div><span class="step">01</span><h2 id="input-heading">Datos del pedido</h2></div>
     <button type="button" class="text-btn" id="exampleBtn">Cargar DSM 113</button></div>
 
+   <details class="accessibility-panel" id="accessibilityPanel">
+     <summary><span class="accessibility-icon" aria-hidden="true">Aa</span> Accesibilidad · letra de los datos <span class="accessibility-chevron" aria-hidden="true">▾</span></summary>
+     <div class="accessibility-inner">
+       <p>Los datos introducidos se muestran en negrita y más grandes. Puedes personalizarlos; el ajuste queda guardado en este móvil.</p>
+       <div class="accessibility-controls">
+         <label class="accessibility-size">Tamaño de fuente
+           <select id="dataFontSize" aria-label="Tamaño de letra de las casillas">
+             <option value="18">Grande · 18 px</option>
+             <option value="20" selected>Predeterminado · 20 px</option>
+             <option value="22">Muy grande · 22 px</option>
+             <option value="24">Extra grande · 24 px</option>
+             <option value="26">Máximo · 26 px</option>
+           </select>
+         </label>
+         <label class="accessibility-bold"><input type="checkbox" id="dataFontBold" checked> Datos en negrita</label>
+       </div>
+       <button type="button" id="resetAccessibility" class="accessibility-reset">Restablecer tamaño y negrita</button>
+     </div>
+   </details>
+
    <div class="saved-row">
     <label for="savedReferences">Referencias guardadas</label>
     <div class="saved-flex"><select id="savedReferences"><option value="">Selecciona una referencia</option></select>
@@ -191,12 +211,15 @@
  <script src="app.js"></script>
  <script src="catalogo-referencias.js"></script>
  <script src="validacion-obligatorios.js"></script>
+ <script src="accesibilidad.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
 (function () {
   'use strict';
   const E = window.TotemplastEngine;
   const Validation = window.TotemplastValidation;
+  const Accessibility = window.TotemplastAccessibility;
+  const ACCESSIBILITY_KEY = "totemplast_accesibilidad_v14";
   const STORAGE_KEY = 'totemplast_previsiones_v1';
   const CALENDAR_KEY = 'totemplast_calendario_v2';
   const MIGRATION_KEY = 'totemplast_datos_v3_aplicados';
@@ -237,6 +260,22 @@
   function readOptionalNonNegative(id, name) {
     if ($(id).value.trim() === '') return 0;
     return readNonNegative(id, name);
+  }
+  function setAccessibilityPreferences(raw, persistChanges) {
+    const prefs = Accessibility.normalize(raw);
+    Accessibility.apply(document.documentElement, prefs);
+    $('dataFontSize').value = String(prefs.size);
+    $('dataFontBold').checked = prefs.bold;
+    if (persistChanges) {
+      try {localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(prefs));}
+      catch (_) { /* La preferencia sigue aplicada en esta sesión. */ }
+    }
+  }
+  function restoreAccessibilityPreferences() {
+    let saved = null;
+    try {saved = JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY) || 'null');}
+    catch (_) { /* Usar ajuste predeterminado. */ }
+    setAccessibilityPreferences(saved, false);
   }
   function updateRequiredBorders() {
     const required = Validation.getRequiredIds(mode, $('timePast').checked);
@@ -753,6 +792,16 @@
   $('copyBtn').addEventListener('click',copyReport);
   $('mailBtn').addEventListener('click',mailReport);
   $('shareBtn').addEventListener('click',shareReport);
+  $('dataFontSize').addEventListener('change',()=>setAccessibilityPreferences({
+    size:Number($('dataFontSize').value),bold:$('dataFontBold').checked
+  },true));
+  $('dataFontBold').addEventListener('change',()=>setAccessibilityPreferences({
+    size:Number($('dataFontSize').value),bold:$('dataFontBold').checked
+  },true));
+  $('resetAccessibility').addEventListener('click',()=>setAccessibilityPreferences(
+    Accessibility.DEFAULT, true
+  ));
+  restoreAccessibilityPreferences();
   updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');updateRequiredBorders();
 })();
 

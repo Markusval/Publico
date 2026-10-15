@@ -1,8 +1,15 @@
-# Planificador Producción Totemplast — Android v1.2
+# Planificador Producción Totemplast — Android v1.4
 
 Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 
-## Nuevo en la v1.2
+## Nuevo en la v1.4
+- Por defecto, todos los valores escritos en las casillas se muestran en **negrita** y con fuente **20 px**, superior a la original.
+- Menú de **Accesibilidad** en la sección «Datos del pedido» para seleccionar 18, 20, 22, 24 o 26 px y activar/desactivar negrita.
+- Los ajustes se guardan localmente en el móvil y se recuperan al abrir la aplicación; incluye botón de restablecimiento.
+- Los marcadores de posición (placeholder) siguen siendo discretos, para distinguirlos de un dato introducido.
+- Se mantienen el calendario, los cálculos, el catálogo de referencias y la validación de obligatorios.
+
+## Novedades que se conservan de la v1.2
 - Los campos **obligatorios vacíos** aparecen desde el inicio con un borde **rojo de 2 px**, que desaparece al introducir un valor.
 - Al borrar un dato obligatorio, su borde rojo reaparece de inmediato, también si se trata del ciclo actual.
 - Obligatorios: referencia, pedido total, cavidades, ciclo/inyectadas por hora, piezas por caja, cajas por palet y avance indicado según modo (cajas totales o palets completos). Para lecturas anteriores, fecha y hora de lectura.
@@ -19,8 +26,8 @@ Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 - El email se prepara en la aplicación de correo; el usuario confirma el envío.
 
 ## Compilación
-GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.2-APK**. El archivo instalable se llama `app-debug.apk`.
+GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.4-APK**. El archivo instalable se llama `app-debug.apk`.
 
-Paquete conservado: `com.totemplast.prevision`; `versionCode 3`, `versionName 1.2`.
+Paquete conservado: `com.totemplast.prevision`; `versionCode 4`, `versionName 1.4`.
 
 **Nota sobre actualizaciones:** las APK de depuración creadas por ejecuciones distintas pueden estar firmadas con claves diferentes. No desinstales una versión anterior sin guardar primero los datos locales que quieras preservar.
