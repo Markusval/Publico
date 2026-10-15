@@ -188,6 +188,7 @@
   <footer>PREVISIÓN DE PRODUCCIÓN · TOTEMPLAST · Uso local, sin servidores</footer>
  </main>
  <script src="app.js"></script>
+ <script src="catalogo-referencias.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
 (function () {
@@ -209,6 +210,7 @@
   let savingDisabled = false;
   let stored = loadStorage();
   migrateSavedReferences();
+  seedPackagingReferences();
   let calendarState = loadCalendarState();
   let calendarMonth = new Date(new Date().getFullYear(),new Date().getMonth(),1);
 
@@ -463,6 +465,28 @@
       localStorage.setItem(MIGRATION_KEY,'1');
     } catch (_) { /* Los calculos siguen disponibles si se bloquea el almacenamiento. */ }
   }
+  // Incorporar fichas nuevas al almacenamiento local sin modificar otras referencias.
+  // Los palets/cajas comunicados son informativos; NO son pedido ni produccion.
+  function seedPackagingReferences() {
+    const key='totemplast_catalogo_embalajes_20261015';
+    try {
+      if(localStorage.getItem(key)==='1') return;
+      for (const item of (window.TotemplastReferenceCatalog || [])) {
+        if (!stored[item.reference]) {
+          stored[item.reference]={
+            reference:item.reference, piecesPerBox:item.piecesPerBox,
+            boxesPerPallet:item.boxesPerPallet,
+            orderPieces:'', cavities:'', fullBoxes:0, loosePieces:0,
+            mode:'pallets', readAt:null, measuredRateUnit:'seconds',
+            informedPallets:item.informedPallets,
+            informedExtraBoxes:item.informedExtraBoxes
+          };
+        }
+      }
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(stored));
+      localStorage.setItem(key,'1');
+    } catch (_) { /* Fallo de almacenamiento: la calculadora permanece disponible. */ }
+  }
   function showRateHint(ref) {
     const saved=stored[String(ref||'').trim().toUpperCase()];
     const prevUnit=saved && saved.measuredRateUnit==='seconds' ? 'seconds':'per_hour';
@@ -484,7 +508,7 @@
     if (!stored[ref]) return;
     const a=stored[ref];
     for(const id of ['reference','orderPieces','cavities','piecesPerBox','boxesPerPallet'])
-      $(id).value=a[id];
+      $(id).value=a[id] == null ? '' : a[id];
     // El ritmo es siempre una lectura nueva; el ultimo queda solo como sugerencia.
     $('rateUnit').value=a.measuredRateUnit==='seconds'?'seconds':'per_hour';
     $('injectionsPerHour').value='';
@@ -495,8 +519,8 @@
     $('producedExtraBoxes').value=a.fullBoxes%perPal;
     $('producedLoosePieces').value=a.loosePieces;
     setMode(a.mode==='pallets'?'pallets':'boxes',false);
-    $('readingDateTime').value=toLocalInputDate(new Date(a.readAt));
-    setTimeMode(true); // No transformar una lectura vieja en una lectura de ahora.
+    $('readingDateTime').value=a.readAt ? toLocalInputDate(new Date(a.readAt)) : '';
+    setTimeMode(Boolean(a.readAt)); // No transformar una lectura vieja en una lectura de ahora.
     refreshReferences(ref);
     invalidate();
   }
