@@ -1,4 +1,4 @@
-name: TOTEMPLAST Android 1.4 - APK
+name: TOTEMPLAST Android 1.5 - APK
 on:
   workflow_dispatch:
   push:
@@ -34,11 +34,13 @@ jobs:
         run: node tests/verificar-obligatorios.cjs
       - name: Probar accesibilidad y tamaños de letra
         run: node tests/verificar-accesibilidad.cjs
+      - name: Probar correo completo y enlace mailto
+        run: node tests/verificar-correo.cjs
       - name: Compilar APK instalable
         run: gradle --no-daemon --stacktrace :app:assembleDebug
-      - name: Publicar APK v1.4
+      - name: Publicar APK v1.5
         uses: actions/upload-artifact@v4
         with:
-          name: TOTEMPLAST-Planificador-Produccion-v1.4-APK
+          name: TOTEMPLAST-Planificador-Produccion-v1.5-APK
           path: totemplast-prevision-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

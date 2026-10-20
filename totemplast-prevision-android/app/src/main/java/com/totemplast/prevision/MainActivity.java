@@ -69,12 +69,25 @@ public class MainActivity extends Activity {
  public final class AndroidActions {
   @JavascriptInterface public void prepareMail(String subject,String body) {
    runOnUiThread(()->{
-    Intent i=new Intent(Intent.ACTION_SENDTO);
-    i.setData(Uri.parse("mailto:daniel@totemplast.com"));
-    i.putExtra(Intent.EXTRA_EMAIL,new String[]{"daniel@totemplast.com"});
-    i.putExtra(Intent.EXTRA_SUBJECT,subject);
-    i.putExtra(Intent.EXTRA_TEXT,body);
-    try{startActivity(i);}catch(ActivityNotFoundException e){Toast.makeText(MainActivity.this,"No hay aplicación de correo configurada",Toast.LENGTH_LONG).show();}
+    // v1.5: tanto la URI mailto como los extras contienen el asunto y el informe.
+    // Algunos clientes de correo ignoran EXTRA_SUBJECT/EXTRA_TEXT al usar SENDTO;
+    // otros los necesitan. Incluir ambas vías conserva la información en ambos.
+    if (subject == null || subject.trim().isEmpty() || body == null || body.trim().isEmpty()) {
+     Toast.makeText(MainActivity.this,"No se puede abrir un correo sin asunto o informe",Toast.LENGTH_LONG).show();
+     return;
+    }
+    final Intent email = new Intent(Intent.ACTION_SENDTO);
+    email.setData(Uri.parse(EmailDraft.mailtoUri(subject,body)));
+    email.putExtra(Intent.EXTRA_EMAIL,new String[]{EmailDraft.RECIPIENT});
+    email.putExtra(Intent.EXTRA_SUBJECT,subject);
+    email.putExtra(Intent.EXTRA_TEXT,body);
+    try {
+     startActivity(Intent.createChooser(email,"Enviar informe de producción"));
+    } catch (ActivityNotFoundException e) {
+     Toast.makeText(MainActivity.this,"No hay aplicación de correo configurada",Toast.LENGTH_LONG).show();
+    } catch (SecurityException e) {
+     Toast.makeText(MainActivity.this,"No se puede abrir la aplicación de correo",Toast.LENGTH_LONG).show();
+    }
    });
   }
   @JavascriptInterface public void shareText(String text) {
