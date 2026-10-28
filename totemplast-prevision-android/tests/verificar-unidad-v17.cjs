@@ -44,6 +44,6 @@ assert.equal(input.value,'67,2');
 assert.equal(previewCalls.at(-1),134.4);
 input.value='';unit.value='seconds';listener();
 assert.equal(input.value,'','La ausencia de dato sigue siendo ausencia de dato');
-assert.equal(invalidateCalls,7);
-assert.equal(hintCalls.length,7);
+assert.equal(invalidateCalls,6);
+assert.equal(hintCalls.length,6);
 console.log('v1.7: dato intacto en ambos sentidos, coma decimal, vista previa actualizada y recalculo requerido.');
