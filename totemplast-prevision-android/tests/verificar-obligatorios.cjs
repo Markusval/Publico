@@ -34,7 +34,7 @@ for(const mode of ['boxes','pallets','pieces']){
     assert.deepEqual(validator.getMissingIds(required,empty),required);
     const complete=Object.fromEntries(required.map(id=>[id,'1']));
     if(historical)complete.readingDateTime='2026-10-15T14:00';
-    complete[mode==='boxes'?'producedBoxes':'producedPallets']='0';
+    complete[mode==='boxes'?'producedBoxes':mode==='pallets'?'producedPallets':'producedPieces']='0';
     assert.deepEqual(validator.getMissingIds(required,complete),[]);
     complete.injectionsPerHour='';
     assert.deepEqual(validator.getMissingIds(required,complete),['injectionsPerHour']);
@@ -43,11 +43,11 @@ for(const mode of ['boxes','pallets','pieces']){
 for(const id of validator.ALL_REQUIRED_IDS) assert(html.includes('id="'+id+'"'),'Falta el campo '+id);
 assert(html.includes('<script src="validacion-obligatorios.js"></script>'));
 assert(html.includes('updateRequiredBorders();'),'Sin actualización visual');
-assert(html.includes("readOptionalNonNegative('producedExtraBoxes'"));
-assert(html.includes("readOptionalNonNegative('producedLoosePieces'"));
+assert(html.includes('Capture.parseProduction('));
+assert(html.includes('id="producedLoosePieces"'));
 assert(css.includes('.field input.missing-required'));
 assert(android.includes('"validacion-obligatorios.js"'));
 const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(inlineScripts.length,1,'Se esperaba un único script de interfaz');
 new vm.Script(inlineScripts[0][1],{filename:'index.html inline JS'});
-console.log('v1.2: comprobación de obligatorios, opcionales, ambos modos, modo histórico y sintaxis correcta.');
+console.log('v1.2: comprobación de obligatorios, opcionales, tres modos, modo histórico y sintaxis correcta.');
