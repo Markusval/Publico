@@ -179,7 +179,8 @@
     const boxesPerPallet = requireWholeNumber(input.boxesPerPallet, 'Cajas por palet', false);
     const fullBoxes = requireWholeNumber(input.fullBoxes, 'Cajas fabricadas', true);
     const loosePieces = requireWholeNumber(input.loosePieces || 0, 'Piezas sueltas', true);
-    if (loosePieces >= piecesPerBox) throw new Error('Las piezas sueltas deben ser menos que las piezas por caja. Si hay mas, anota otra caja terminada.');
+    // Piezas adicionales sin restricción de caja: también admite 6.000 piezas
+    // directas y ninguna caja. El desglose se normaliza solo para mostrarlo.
     const produced = fullBoxes * piecesPerBox + loosePieces;
     if (!Number.isSafeInteger(produced)) throw new Error('Las cantidades exceden el rango numerico seguro.');
     const closures = normalizeClosures(calendar);

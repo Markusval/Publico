@@ -127,3 +127,9 @@ main .field select.rate-unit{height:50px}
 .accessibility-reset{background:white;border:1px solid #aac5cc;color:#12566a;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:650;margin-top:13px}
 .accessibility-reset:focus-visible,.accessibility-panel summary:focus-visible{outline:3px solid #087b87;outline-offset:2px}
 @media(max-width:420px){.accessibility-controls{flex-direction:column;align-items:stretch;gap:8px}.accessibility-size{min-width:0}}
+
+/* v1.6: unidades explícitas y tercer modo de captura, sin restricciones de embalaje. */
+.machine-rate-preview{font-size:14px;line-height:1.45;font-weight:800;color:#124f73;background:#e7f2fb;border:1px solid #bfdcec;border-radius:9px;padding:11px 12px;margin:12px 0 8px}
+.segmented{width:100%;flex-wrap:wrap;gap:4px}
+.segmented .seg{flex:1 1 auto;min-width:98px;white-space:normal;line-height:1.25}
+@media(max-width:360px){.segmented .seg{font-size:11px;padding:10px 7px}.machine-rate-preview{font-size:13px}}

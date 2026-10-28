@@ -66,15 +66,16 @@
    <div class="form-grid">
     <div class="field"><label for="cavities">Cavidades activas <span class="req">*</span></label>
       <input id="cavities" type="number" min="1" step="1" inputmode="numeric" placeholder="1"></div>
-    <div class="field"><label for="injectionsPerHour">Ciclo o ritmo actual <span class="req">*</span></label>
-      <input id="injectionsPerHour" type="text" inputmode="decimal" placeholder="Ej. 67,2" autocomplete="off">
-      <select id="rateUnit" class="rate-unit" aria-label="Unidad de la medición">
-       <option value="seconds" selected>Segundos por ciclo</option>
-       <option value="per_hour">Inyectadas por hora</option>
+    <div class="field"><label for="injectionsPerHour">Ritmo de la máquina (por inyectada) <span class="req">*</span></label>
+      <input id="injectionsPerHour" type="text" inputmode="decimal" placeholder="Ej. 85" autocomplete="off">
+      <select id="rateUnit" class="rate-unit" aria-label="Unidad de la medición de máquina">
+       <option value="per_hour" selected>Inyectadas por hora (máquina)</option>
+       <option value="seconds">Segundos por inyectada (máquina)</option>
       </select></div>
    </div>
-   <p class="help">Puedes introducir el ciclo en segundos (inyectadas/h = 3.600 / ciclo) o directamente las inyectadas/hora. La app multiplica por las cavidades para obtener piezas/hora.</p>
-   <p class="rate-reminder" id="previousRate" aria-live="polite">Introduce el ciclo o ritmo actual. No se reutiliza automáticamente el anterior.</p>
+   <p class="help">El ritmo indicado SIEMPRE corresponde a la máquina, no a una pieza: inyectadas/hora × cavidades activas = piezas/hora. Ejemplo: 85 inyectadas/h × 2 cavidades = 170 piezas/h. Si mides segundos por inyectada, selecciona expresamente esa unidad.</p>
+   <p class="machine-rate-preview" id="machineRatePreview" aria-live="polite">Ritmo de máquina pendiente. Introduce cavidades e inyectadas/hora.</p>
+   <p class="rate-reminder" id="previousRate" aria-live="polite">Introduce el ritmo actual de la máquina. No se reutiliza automáticamente el anterior.</p>
 
    <div class="section-divider"><span>Embalaje</span></div>
    <div class="form-grid">
@@ -88,6 +89,7 @@
    <div class="segmented" role="group" aria-label="Forma de introducir la produccion">
      <button type="button" id="totalBoxesMode" class="seg active" aria-pressed="true">Cajas totales</button>
      <button type="button" id="palletMode" class="seg" aria-pressed="false">Palets + cajas</button>
+     <button type="button" id="piecesMode" class="seg" aria-pressed="false">Piezas directas</button>
    </div>
    <div id="totalBoxesInputs" class="form-grid">
     <div class="field"><label for="producedBoxes">Cajas completas fabricadas <span class="req">*</span></label>
@@ -99,10 +101,15 @@
     <div class="field"><label for="producedExtraBoxes">Cajas fuera de palets completos</label>
       <input id="producedExtraBoxes" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
    </div>
-   <div class="form-grid">
-    <div class="field"><label for="producedLoosePieces">Piezas sueltas adicionales (opcional)</label>
+   <div id="piecesInputs" class="form-grid hidden">
+    <div class="field"><label for="producedPieces">Total de piezas fabricadas <span class="req">*</span></label>
+      <input id="producedPieces" type="number" min="0" step="1" inputmode="numeric" placeholder="Ej. 6000" value="0"></div>
+   </div>
+   <div id="additionalPiecesInputs" class="form-grid">
+    <div class="field"><label for="producedLoosePieces">Piezas adicionales (opcional, sin límite por caja)</label>
       <input id="producedLoosePieces" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
    </div>
+   <p class="help">Puedes introducir 6.000 piezas directamente, o indicar 0 cajas y 6.000 piezas adicionales. El programa transforma las cantidades a cajas y palets solo para el informe.</p>
 
    <div class="section-divider"><span>Momento de la lectura</span></div>
    <div class="time-options" role="group" aria-label="Momento de lectura">
@@ -211,6 +218,7 @@
  <script src="app.js"></script>
  <script src="catalogo-referencias.js"></script>
  <script src="validacion-obligatorios.js"></script>
+ <script src="captura-produccion.js"></script>
  <script src="accesibilidad.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
@@ -218,6 +226,7 @@
   'use strict';
   const E = window.TotemplastEngine;
   const Validation = window.TotemplastValidation;
+  const Capture = window.TotemplastCapture;
   const Accessibility = window.TotemplastAccessibility;
   const ACCESSIBILITY_KEY = "totemplast_accesibilidad_v14";
   const STORAGE_KEY = 'totemplast_previsiones_v1';
@@ -225,7 +234,7 @@
   const MIGRATION_KEY = 'totemplast_datos_v3_aplicados';
   const $ = (id) => document.getElementById(id);
   const dataIds = ['reference','orderPieces','cavities','injectionsPerHour','piecesPerBox','boxesPerPallet',
-    'producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'];
+    'producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces','producedPieces'];
   const integerLocale = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0, useGrouping:'always' });
   const decimalLocale = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping:'always' });
   const dateLongFormat = new Intl.DateTimeFormat('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -301,24 +310,41 @@
     if (!Number.isSafeInteger(val) || val < 0) throw new Error(name+': introduce un numero entero mayor o igual a 0.');
     return val;
   }
+  function productionValues() {
+    return {
+      producedBoxes:$('producedBoxes').value,
+      producedPallets:$('producedPallets').value,
+      producedExtraBoxes:$('producedExtraBoxes').value,
+      producedLoosePieces:$('producedLoosePieces').value,
+      producedPieces:$('producedPieces').value
+    };
+  }
   function setMode(value, convert) {
+    if (!['boxes','pallets','pieces'].includes(value))
+      throw new Error('Modo de introducción de producción incorrecto.');
     if (convert && value !== mode) {
-      const perPal = Math.floor(Number($('boxesPerPallet').value) || 0);
-      if (mode === 'boxes' && value === 'pallets' && perPal > 0) {
-        const total = Math.max(0, Number($('producedBoxes').value)||0);
-        $('producedPallets').value = Math.floor(total/perPal);
-        $('producedExtraBoxes').value = total%perPal;
-      } else if (mode === 'pallets' && value === 'boxes' && perPal > 0) {
-        $('producedBoxes').value = Math.max(0,(Number($('producedPallets').value)||0)*perPal+(Number($('producedExtraBoxes').value)||0));
+      const perBox = Number($('piecesPerBox').value);
+      const perPal = Number($('boxesPerPallet').value);
+      if (Number.isSafeInteger(perBox) && perBox>0 && Number.isSafeInteger(perPal) && perPal>0) {
+        try {
+          const previous = Capture.parseProduction({mode,piecesPerBox:perBox,
+            boxesPerPallet:perPal,...productionValues()});
+          const converted=Capture.distributePieces(previous.produced,perBox,perPal);
+          for (const [id,num] of Object.entries(converted)) $(id).value=String(num);
+        } catch (_) {
+          // Se mantienen las casillas anteriores para que el operario las pueda corregir.
+        }
       }
     }
     mode = value;
     $('totalBoxesInputs').classList.toggle('hidden',mode !== 'boxes');
     $('palletInputs').classList.toggle('hidden',mode !== 'pallets');
-    $('totalBoxesMode').classList.toggle('active',mode === 'boxes');
-    $('palletMode').classList.toggle('active',mode === 'pallets');
-    $('totalBoxesMode').setAttribute('aria-pressed',String(mode === 'boxes'));
-    $('palletMode').setAttribute('aria-pressed',String(mode === 'pallets'));
+    $('piecesInputs').classList.toggle('hidden',mode !== 'pieces');
+    $('additionalPiecesInputs').classList.toggle('hidden',mode === 'pieces');
+    for(const [id,kind] of [['totalBoxesMode','boxes'],['palletMode','pallets'],['piecesMode','pieces']]) {
+      $(id).classList.toggle('active',mode === kind);
+      $(id).setAttribute('aria-pressed',String(mode === kind));
+    }
     invalidate();
   }
   function setTimeMode(past) {
@@ -338,27 +364,44 @@
   function rateValue() {
     const raw=$('injectionsPerHour').value.trim().replace(/\s/g,'').replace(',', '.');
     if (!raw || !Number.isFinite(Number(raw)) || Number(raw)<=0) {
-      throw new Error('Introduce el ciclo actual en segundos o las inyectadas/hora; el dato es obligatorio en cada lectura.');
+      throw new Error('Introduce las inyectadas por hora de la máquina, o selecciona segundos por inyectada.');
     }
     return Number(raw);
   }
+  function updateRatePreview() {
+    const rateText=$('injectionsPerHour').value.trim().replace(/\s/g,'').replace(',','.');
+    const cavities=Number($('cavities').value);
+    if(!rateText || !Number.isFinite(Number(rateText)) || Number(rateText)<=0 ||
+       !Number.isSafeInteger(cavities) || cavities<=0) {
+      text('machineRatePreview','Introduce las cavidades y el ritmo de máquina. Ejemplo: 85 inyectadas/h × 2 cavidades = 170 piezas/h.');
+      return;
+    }
+    try {
+      const calculated=Capture.machineRate(Number(rateText),$('rateUnit').value,cavities);
+      const source=$('rateUnit').value === 'seconds'
+        ? nd(Number(rateText))+' segundos/inyectada = '+nd(calculated.injectionsPerHour)+' inyectadas/h'
+        : nd(Number(rateText))+' inyectadas/h';
+      text('machineRatePreview','MÁQUINA: '+source+' × '+n(cavities)+' cavidades = '+nd(calculated.piecesPerHour)+' piezas/hora.');
+    } catch (_) {
+      text('machineRatePreview','Revisa el ritmo y las cavidades introducidos.');
+    }
+  }
   function getInput() {
-    const fullBoxes = mode === 'boxes'
-      ? readNonNegative('producedBoxes','las cajas fabricadas')
-      : readNonNegative('producedPallets','los palets fabricados') * Number($('boxesPerPallet').value) +
-          readOptionalNonNegative('producedExtraBoxes','las cajas adicionales');
-    if (!Number.isSafeInteger(fullBoxes)) throw new Error('La cantidad de cajas no es valida.');
+    const measured=rateValue();
+    const machine=Capture.machineRate(measured,$('rateUnit').value,$('cavities').value);
+    const quantity=Capture.parseProduction({mode,piecesPerBox:$('piecesPerBox').value,
+      boxesPerPallet:$('boxesPerPallet').value,...productionValues()});
     const d = $('timePast').checked ? new Date($('readingDateTime').value) : new Date();
     return {
       reference:$('reference').value,
       orderPieces:$('orderPieces').value,
       cavities:$('cavities').value,
-      injectionsPerHour:$('rateUnit').value === 'seconds' ? 3600/rateValue() : rateValue(),
-      measuredRateValue:rateValue(), measuredRateUnit:$('rateUnit').value,
+      injectionsPerHour:machine.injectionsPerHour,
+      measuredRateValue:measured, measuredRateUnit:$('rateUnit').value,
       piecesPerBox:$('piecesPerBox').value,
       boxesPerPallet:$('boxesPerPallet').value,
-      fullBoxes,
-      loosePieces:readOptionalNonNegative('producedLoosePieces','las piezas sueltas'),
+      fullBoxes:quantity.fullBoxes,
+      loosePieces:quantity.loosePieces,
       readAt:d
     };
   }
@@ -580,24 +623,28 @@
     for(const id of ['reference','orderPieces','cavities','piecesPerBox','boxesPerPallet'])
       $(id).value=a[id] == null ? '' : a[id];
     // El ritmo es siempre una lectura nueva; el ultimo queda solo como sugerencia.
-    $('rateUnit').value=a.measuredRateUnit==='seconds'?'seconds':'per_hour';
+    $('rateUnit').value='per_hour'; // Siempre por defecto inyectadas/h; el ciclo anterior es solo orientativo.
     $('injectionsPerHour').value='';
     showRateHint(ref);
     $('producedBoxes').value=a.fullBoxes;
     const perPal=Number(a.boxesPerPallet)||1;
     $('producedPallets').value=Math.floor(a.fullBoxes/perPal);
     $('producedExtraBoxes').value=a.fullBoxes%perPal;
-    $('producedLoosePieces').value=a.loosePieces;
-    setMode(a.mode==='pallets'?'pallets':'boxes',false);
+    $('producedLoosePieces').value=a.loosePieces == null ? 0 : a.loosePieces;
+    const total=(Number(a.fullBoxes)||0)*(Number(a.piecesPerBox)||0)+(Number(a.loosePieces)||0);
+    $('producedPieces').value=total;
+    setMode(['boxes','pallets','pieces'].includes(a.mode)?a.mode:'boxes',false);
     $('readingDateTime').value=a.readAt ? toLocalInputDate(new Date(a.readAt)) : '';
     setTimeMode(Boolean(a.readAt)); // No transformar una lectura vieja en una lectura de ahora.
     refreshReferences(ref);
     invalidate();
+    updateRatePreview();
   }
   function newReference() {
     for(const id of ['reference','orderPieces','cavities','injectionsPerHour','piecesPerBox','boxesPerPallet'])$(id).value='';
-    for(const id of ['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'])$(id).value='0';
-    $('rateUnit').value='seconds';$('readingDateTime').value=''; setMode('boxes',false);setTimeMode(false);refreshReferences('');showRateHint('');invalidate();
+    for(const id of ['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces','producedPieces'])$(id).value='0';
+    $('rateUnit').value='per_hour';$('readingDateTime').value=''; setMode('boxes',false);setTimeMode(false);refreshReferences('');showRateHint('');invalidate();
+    updateRatePreview();
     $('reference').focus();
   }
   function loadExample() {
@@ -610,8 +657,8 @@
         producedBoxes:'42',producedPallets:'2',producedExtraBoxes:'6',producedLoosePieces:'0'}).forEach(([id,v])=>$(id).value=v);
       setMode('pallets',false);
       $('readingDateTime').value='2026-10-13T09:31';setTimeMode(true);
-      $('rateUnit').value='seconds';
-      text('previousRate','Última medición conocida: 67,2 segundos/ciclo. Escribe el dato actual.');
+      $('rateUnit').value='per_hour';
+      text('previousRate','Última medición conocida: 67,2 segundos por inyectada. Introduce siempre el ritmo actual de máquina y verifica las unidades.');
     }
     // Intencionadamente NO calcula ni asigna automaticamente las inyectadas/hora.
     $('injectionsPerHour').value='';
@@ -756,7 +803,8 @@
   for(const id of dataIds) {
     $(id).addEventListener('input',()=>{
       if (id==='reference') showRateHint($('reference').value);
-      const isNewCount=['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces'].includes(id);
+      if (id==='cavities'||id==='injectionsPerHour') updateRatePreview();
+      const isNewCount=['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces','producedPieces'].includes(id);
       // Si una previsión ya existe, modificar el avance implica una NUEVA toma:
       // el ritmo deja de ser válido hasta que el encargado lo escriba otra vez.
       if (isNewCount && lastReport) $('injectionsPerHour').value='';
@@ -770,6 +818,7 @@
     // Cambiar entre segundos/ciclo e inyectadas/h no puede reinterpretar el mismo numero.
     $('injectionsPerHour').value='';
     showRateHint($('reference').value);
+    updateRatePreview();
     invalidate();
   });
   $('readingDateTime').addEventListener('input',invalidate);
@@ -777,6 +826,7 @@
   $('timePast').addEventListener('change',()=>setTimeMode(true));
   $('totalBoxesMode').addEventListener('click',()=>setMode('boxes',true));
   $('palletMode').addEventListener('click',()=>setMode('pallets',true));
+  $('piecesMode').addEventListener('click',()=>setMode('pieces',true));
   $('calculateBtn').addEventListener('click',calculate);
   $('calculateCalendarBtn').addEventListener('click',calculate);
   $('newBtn').addEventListener('click',newReference);  $('exampleBtn').addEventListener('click',loadExample);
@@ -802,7 +852,7 @@
     Accessibility.DEFAULT, true
   ));
   restoreAccessibilityPreferences();
-  updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');updateRequiredBorders();
+  updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');updateRequiredBorders();updateRatePreview();
 })();
 
 </script>

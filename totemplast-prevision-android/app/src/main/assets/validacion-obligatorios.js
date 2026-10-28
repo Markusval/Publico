@@ -13,14 +13,14 @@
     'piecesPerBox', 'boxesPerPallet'
   ]);
   const ALL_REQUIRED_IDS = Object.freeze([
-    ...BASE_IDS, 'producedBoxes', 'producedPallets', 'readingDateTime'
+    ...BASE_IDS, 'producedBoxes', 'producedPallets', 'producedPieces', 'readingDateTime'
   ]);
   function getRequiredIds(mode, historical) {
-    if (mode !== 'boxes' && mode !== 'pallets')
+    if (!['boxes','pallets','pieces'].includes(mode))
       throw new Error('Modo de producción no válido.');
     return [
       ...BASE_IDS,
-      mode === 'boxes' ? 'producedBoxes' : 'producedPallets',
+      mode === 'boxes' ? 'producedBoxes' : mode === 'pallets' ? 'producedPallets' : 'producedPieces',
       ...(historical ? ['readingDateTime'] : [])
     ];
   }
