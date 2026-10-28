@@ -21,7 +21,7 @@ const elements={injectionsPerHour:input,rateUnit:unit,reference:{value:'DSM-117'
 vm.runInNewContext(code,{
   $:(id)=>{assert(elements[id],'Elemento DOM desconocido: '+id);return elements[id];},
   showRateHint:(name)=>hintCalls.push(name),
-  updateRatePreview:()=>previewCalls.push(Capture.machineRate(Number(input.value.replace(',','.')),unit.value,2).piecesPerHour),
+  updateRatePreview:()=>previewCalls.push(input.value.trim() ? Capture.machineRate(Number(input.value.replace(',','.')),unit.value,2).piecesPerHour : null),
   invalidate:()=>{invalidateCalls++;}
 });
 assert.equal(typeof listener,'function');
