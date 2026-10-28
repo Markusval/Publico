@@ -815,8 +815,8 @@
     });
   }
   $('rateUnit').addEventListener('change',()=>{
-    // Cambiar entre segundos/ciclo e inyectadas/h no puede reinterpretar el mismo numero.
-    $('injectionsPerHour').value='';
+    // Conservar el número escrito. La unidad seleccionada cambia su interpretación,
+    // pero nunca borra la cifra ni la convierte automáticamente.
     showRateHint($('reference').value);
     updateRatePreview();
     invalidate();

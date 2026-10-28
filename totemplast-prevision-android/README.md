@@ -1,8 +1,15 @@
-# Planificador Producción Totemplast — Android v1.6
+# Planificador Producción Totemplast — Android v1.7
 
 Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 
-## Corrección urgente v1.6
+## Mejora de ergonomía v1.7
+- **Cambiar entre «Inyectadas por hora» y «Segundos por inyectada» mantiene exactamente la cifra introducida**, incluso cuando se utiliza coma decimal. No se borra ni convierte automáticamente.
+- La vista previa se actualiza con la nueva unidad y las cavidades activas.
+- El informe previo se invalida, para evitar conservar una previsión calculada con otra unidad.
+- Se mantienen todos los cambios de la v1.6, la accesibilidad, el calendario y el envío de correo.
+- Pruebas automáticas del cambio en ambos sentidos, el valor 85 y el decimal 67,2.
+
+## Corrección anterior v1.6
 - **Por defecto la máquina se expresa en INYECTADAS POR HORA.** 85 inyectadas/h con 2 cavidades son exactamente 170 piezas/h, con 6 cavidades son 510 piezas/h. El ciclo siempre corresponde a una inyectada de máquina, no a cada pieza.
 - El modo alternativo «segundos por inyectada» sigue disponible, con selección explícita y vista previa de la equivalencia.
 - **Nuevo modo «Piezas directas»**: permite escribir 6.000 piezas fabricadas, sin consignar cajas ni palets.
@@ -45,8 +52,8 @@ Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 - El correo se prepara con asunto y cuerpo completos en la aplicación de correo; el usuario confirma el envío.
 
 ## Compilación
-GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.6-APK**. El archivo instalable se llama `app-debug.apk`.
+GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.7-APK**. El archivo instalable se llama `app-debug.apk`.
 
-Paquete conservado: `com.totemplast.prevision`; `versionCode 6`, `versionName 1.6`.
+Paquete conservado: `com.totemplast.prevision`; `versionCode 7`, `versionName 1.7`.
 
 **Nota sobre actualizaciones:** las APK de depuración creadas por ejecuciones distintas pueden estar firmadas con claves diferentes. No desinstales una versión anterior sin guardar primero los datos locales que quieras preservar.
