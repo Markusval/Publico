@@ -2,6 +2,14 @@
 
 Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 
+## Distribución v1.7 de instalación independiente (error de firma resuelto)
+- Las compilaciones anteriores de GitHub Actions usaban claves de depuración generadas por cada runner. Una APK v1.7 firmada con otra clave no puede sustituir una v1.6 ya instalada conservando sus datos.
+- La compilación independiente usa `-PtotemplastIndependentInstall=true` y el identificador `com.totemplast.planificador`. Puede coexistir con `com.totemplast.prevision` sin que Android la bloquee por conflicto de firma.
+- El nombre visible será **Planificador Producción Totemplast v1.7**, para distinguirla de la anterior.
+- Los datos de la app anterior seguirán exclusivamente en la antigua instalación. NO se migran automáticamente: las bases de datos locales de Android son aisladas por aplicación. No desinstales la anterior hasta que sus datos estén a salvo.
+- El código puede seguir compilando el paquete original usando el comando normal `gradle :app:assembleDebug`, pero esa versión no es actualizable en dispositivos con firmas anteriores diferentes.
+- **Para futuras actualizaciones sobre la misma aplicación sin pérdida de datos**, debe configurarse una clave de firma persistente y privada fuera del repositorio público (por ejemplo en GitHub Actions Secrets). Esto no es posible retroactivamente para las APK anteriores si se ha perdido su clave original.
+
 ## Mejora de ergonomía v1.7
 - **Cambiar entre «Inyectadas por hora» y «Segundos por inyectada» mantiene exactamente la cifra introducida**, incluso cuando se utiliza coma decimal. No se borra ni convierte automáticamente.
 - La vista previa se actualiza con la nueva unidad y las cavidades activas.
@@ -52,8 +60,8 @@ Aplicación offline de previsiones de fabricación de TOTEMPLAST.
 - El correo se prepara con asunto y cuerpo completos en la aplicación de correo; el usuario confirma el envío.
 
 ## Compilación
-GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.7-APK**. El archivo instalable se llama `app-debug.apk`.
+GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.7-Independiente-APK**. El archivo instalable se llama `app-debug.apk`.
 
-Paquete conservado: `com.totemplast.prevision`; `versionCode 7`, `versionName 1.7`.
+Paquete original: `com.totemplast.prevision`; paquete de instalación independiente: `com.totemplast.planificador`. En ambos casos `versionCode 7`, `versionName 1.7`.
 
 **Nota sobre actualizaciones:** las APK de depuración creadas por ejecuciones distintas pueden estar firmadas con claves diferentes. No desinstales una versión anterior sin guardar primero los datos locales que quieras preservar.

@@ -1,9 +1,14 @@
 plugins { id 'com.android.application' }
+
+// Installable side by side with a previous APK signed by a different CI debug key.
+// The original package is unchanged for normal builds.
+def independentInstall = (findProperty('totemplastIndependentInstall') ?: 'false').toString().toBoolean()
 android {
  namespace 'com.totemplast.prevision'
  compileSdk 35
  defaultConfig {
-  applicationId 'com.totemplast.prevision'
+  applicationId independentInstall ? 'com.totemplast.planificador' : 'com.totemplast.prevision'
+  resValue 'string', 'app_name', independentInstall ? 'Planificador Producción Totemplast v1.7' : 'Planificador Producción Totemplast'
   minSdk 23
   targetSdk 34
   versionCode 7
