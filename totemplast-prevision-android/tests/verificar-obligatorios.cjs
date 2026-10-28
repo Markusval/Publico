@@ -22,13 +22,14 @@ assert.equal(validator.isMissing('   '),true);
 assert.equal(validator.isMissing(''),true);
 assert.equal(validator.isMissing(null),true);
 assert.equal(validator.isMissing('67,2'),false);
-for(const mode of ['boxes','pallets']){
+for(const mode of ['boxes','pallets','pieces']){
   for(const historical of [false,true]){
     const required=validator.getRequiredIds(mode,historical);
     assert(!required.includes('producedExtraBoxes'));
     assert(!required.includes('producedLoosePieces'));
     assert(!required.includes('pauseLabel'));
     assert(!required.includes(mode==='boxes'?'producedPallets':'producedBoxes'));
+    if(mode==='pieces')assert(required.includes('producedPieces'));
     const empty=Object.fromEntries(required.map(id=>[id,'']));
     assert.deepEqual(validator.getMissingIds(required,empty),required);
     const complete=Object.fromEntries(required.map(id=>[id,'1']));
