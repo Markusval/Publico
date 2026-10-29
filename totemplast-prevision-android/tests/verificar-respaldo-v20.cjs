@@ -55,7 +55,7 @@ for(const bad of [
  JSON.stringify({...JSON.parse(backup),schemaVersion:7})
 ])assert.throws(()=>Backup.readText(bad));
 const polluted=JSON.parse(backup);
-polluted.data.references['__proto__']={reference:'__proto__'};
+Object.defineProperty(polluted.data.references,'__proto__',{value:{reference:'__proto__'},enumerable:true});
 assert.throws(()=>Backup.readText(JSON.stringify(polluted)));
 const incorrect=JSON.parse(backup);
 incorrect.data.references['DSM 113'].fullBoxes=-1;
