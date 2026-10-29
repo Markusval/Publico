@@ -1,4 +1,4 @@
-name: TOTEMPLAST Android 2.0 - Copias de seguridad
+name: TOTEMPLAST Android 2.1 - Referencias anchas
 on:
   workflow_dispatch:
   push:
@@ -42,16 +42,18 @@ jobs:
         run: node tests/verificar-unidad-v17.cjs
       - name: Probar exportación, importación y restauración de respaldos
         run: node tests/verificar-respaldo-v20.cjs
-      - name: Compilar APK v2.0 independiente, sin conflicto de firma
+      - name: Verificar referencia y selector ampliados para móvil
+        run: node tests/verificar-diseno-v21.cjs
+      - name: Compilar APK v2.1 independiente, sin conflicto de firma
         run: gradle --no-daemon --stacktrace -PtotemplastIndependentInstall=true :app:assembleDebug
       - name: Verificar que Android la identifica como otra aplicación
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.totemplast.planificador.v2'"
-      - name: Publicar APK v2.0 con importación y exportación
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.totemplast.planificador.v21'"
+      - name: Publicar APK v2.1 con referencias legibles
         uses: actions/upload-artifact@v4
         with:
-          name: TOTEMPLAST-Planificador-Produccion-v2.0-APK
+          name: TOTEMPLAST-Planificador-Produccion-v2.1-APK
           path: totemplast-prevision-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

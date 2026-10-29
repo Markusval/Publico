@@ -7,12 +7,12 @@ android {
  namespace 'com.totemplast.prevision'
  compileSdk 35
  defaultConfig {
-  applicationId independentInstall ? 'com.totemplast.planificador.v2' : 'com.totemplast.prevision'
-  resValue 'string', 'app_name', independentInstall ? 'Planificador Producción Totemplast v2.0' : 'Planificador Producción Totemplast'
+  applicationId independentInstall ? 'com.totemplast.planificador.v21' : 'com.totemplast.prevision'
+  resValue 'string', 'app_name', independentInstall ? 'Planificador Producción Totemplast v2.1' : 'Planificador Producción Totemplast'
   minSdk 23
   targetSdk 34
-  versionCode 20
-  versionName '2.0'
+  versionCode 21
+  versionName '2.1'
  }
  compileOptions {
   sourceCompatibility JavaVersion.VERSION_17

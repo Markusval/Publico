@@ -49,16 +49,19 @@
    <div class="saved-row">
     <label for="savedReferences">Referencias guardadas</label>
     <div class="saved-flex"><select id="savedReferences"><option value="">Selecciona una referencia</option></select>
-      <button id="newBtn" type="button" class="outline small-btn">Nueva</button>
-      <button id="deleteBtn" type="button" class="outline small-btn" disabled>Eliminar</button>
+      <p id="savedReferenceFull" class="saved-ref-full hidden" aria-live="polite"></p>
+      <div class="saved-actions">
+       <button id="newBtn" type="button" class="outline small-btn">Nueva</button>
+       <button id="deleteBtn" type="button" class="outline small-btn" disabled>Eliminar</button>
+      </div>
     </div>
    </div>
 
    <p class="required-hint"><span class="required-hint-symbol" aria-hidden="true"></span> Los campos obligatorios vacíos aparecen con borde rojo.</p>
-   <div class="form-grid">
-    <div class="field"><label for="reference">Referencia <span class="req">*</span></label>
+   <div class="form-grid reference-wide-grid">
+    <div class="field reference-full-width"><label for="reference">Referencia <span class="req">*</span></label>
       <input id="reference" type="text" autocapitalize="characters" placeholder="Ej. DSM 113" autocomplete="off" maxlength="90"></div>
-    <div class="field"><label for="orderPieces">Pedido total (piezas) <span class="req">*</span></label>
+    <div class="field order-field"><label for="orderPieces">Pedido total (piezas) <span class="req">*</span></label>
       <input id="orderPieces" type="number" min="1" step="1" inputmode="numeric" placeholder="6048"></div>
    </div>
 
@@ -560,6 +563,12 @@
     try { localStorage.setItem(STORAGE_KEY,JSON.stringify(stored)); }
     catch(_) { text('actionStatus','El dispositivo no ha permitido guardar las referencias. Los calculos siguen funcionando.'); }
   }
+  function showSavedReferenceFull() {
+    const name=$('savedReferences').value;
+    const el=$('savedReferenceFull');
+    el.textContent=name;
+    el.classList.toggle('hidden',!name || name.length<=13);
+  }
   function refreshReferences(selected) {
     const sel=$('savedReferences');
     sel.innerHTML='<option value="">Selecciona una referencia</option>';
@@ -569,6 +578,7 @@
     });
     sel.value=selected && stored[selected]?selected:'';
     $('deleteBtn').disabled=!sel.value;
+    showSavedReferenceFull();
   }
   // En una actualizacion anterior pudo quedar REE 11 como ensayo. Nunca era un pedido real.
   // Limpieza una sola vez; despues los datos que escriba el usuario se respetan.
@@ -850,7 +860,7 @@
   $('calculateCalendarBtn').addEventListener('click',calculate);
   $('newBtn').addEventListener('click',newReference);  $('exampleBtn').addEventListener('click',loadExample);
   $('savedReferences').addEventListener('change',(ev)=>{
-    const ref=ev.target.value;if(ref)loadReference(ref);else $('deleteBtn').disabled=true;
+    const ref=ev.target.value;if(ref)loadReference(ref);else {$('deleteBtn').disabled=true;showSavedReferenceFull();}
   });
   $('deleteBtn').addEventListener('click',()=>{
     const ref=$('savedReferences').value;
