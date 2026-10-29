@@ -57,7 +57,8 @@
     insist(entries.length <= MAX_REFERENCES, 'La copia contiene demasiadas referencias.');
     const normalized=Object.create(null);
     for (const [key,value] of entries) {
-      insist(key.length>0 && key.length<=90 && key.trim()===key,
+      insist(key.length>0 && key.length<=90 && key.trim()===key &&
+        !['__proto__','constructor','prototype'].includes(key),
         'Hay un código de referencia incorrecto.');
       insist(isObject(value), 'Ficha no válida para '+key+'.');
       const row=scrub(value,0);
