@@ -3,6 +3,10 @@ package com.totemplast.prevision;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Intent;
+import org.json.JSONObject;
+import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -26,7 +30,11 @@ import java.util.Arrays;
 public class MainActivity extends Activity {
  private static final String BASE="https://appassets.androidplatform.net/assets/";
  private static final String HOST="appassets.androidplatform.net";
- private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js","captura-produccion.js","accesibilidad.js"));
+ private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js","captura-produccion.js","accesibilidad.js","respaldo.js"));
+ private static final int EXPORT_BACKUP_REQUEST=4301;
+ private static final int IMPORT_BACKUP_REQUEST=4302;
+ private static final int MAX_BACKUP_BYTES=4000000;
+ private String pendingBackupJson=null;
  private WebView web;
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);
@@ -66,7 +74,99 @@ public class MainActivity extends Activity {
   if(state!=null&&web.restoreState(state)!=null) return;
   web.loadUrl(BASE+"index.html");
  }
+ private void backupJsCallback(String expression) {
+  runOnUiThread(()->{if(web!=null) web.evaluateJavascript(expression,null);});
+ }
+ private void backupExportStatus(boolean ok,String message) {
+  backupJsCallback("window.TotemplastBackup.onAndroidExportResult("+
+    (ok?"true":"false")+","+JSONObject.quote(message)+")");
+ }
+ private void backupImportError(String message) {
+  backupJsCallback("window.TotemplastBackup.onAndroidImportError("+JSONObject.quote(message)+")");
+ }
+ @Override protected void onActivityResult(int requestCode,int resultCode,Intent data) {
+  super.onActivityResult(requestCode,resultCode,data);
+  if(requestCode==EXPORT_BACKUP_REQUEST) {
+   final String payload=pendingBackupJson;
+   pendingBackupJson=null;
+   if(resultCode!=RESULT_OK || data==null || data.getData()==null) {
+    backupExportStatus(false,"Guardado cancelado. No se ha exportado la copia.");
+    return;
+   }
+   if(payload==null) {backupExportStatus(false,"No hay datos pendientes de guardar.");return;}
+   final Uri target=data.getData();
+   new Thread(()->{
+    try(OutputStream output=getContentResolver().openOutputStream(target,"w")) {
+     if(output==null)throw new IOException("No se pudo abrir el archivo de destino.");
+     byte[] bytes=payload.getBytes(StandardCharsets.UTF_8);
+     if(bytes.length>MAX_BACKUP_BYTES)throw new IOException("La copia supera el tamaño máximo.");
+     output.write(bytes);
+     output.flush();
+     backupExportStatus(true,"Copia de seguridad guardada correctamente en la ubicación seleccionada.");
+    } catch(Exception e) {
+     backupExportStatus(false,"No se pudo guardar la copia: "+e.getMessage());
+    }
+   }).start();
+   return;
+  }
+  if(requestCode==IMPORT_BACKUP_REQUEST) {
+   if(resultCode!=RESULT_OK || data==null || data.getData()==null) {
+    backupImportError("Selección de archivo cancelada.");
+    return;
+   }
+   final Uri source=data.getData();
+   new Thread(()->{
+    try(java.io.InputStream stream=getContentResolver().openInputStream(source)) {
+     if(stream==null)throw new IOException("No se pudo abrir el archivo seleccionado.");
+     ByteArrayOutputStream buffer=new ByteArrayOutputStream();
+     byte[] bytes=new byte[8192];
+     int read;
+     while((read=stream.read(bytes))!=-1) {
+      if(buffer.size()+read>MAX_BACKUP_BYTES)
+       throw new IOException("La copia supera el límite de 4 MB.");
+      buffer.write(bytes,0,read);
+     }
+     String json=new String(buffer.toByteArray(),StandardCharsets.UTF_8);
+     backupJsCallback("window.TotemplastBackup.acceptFile("+JSONObject.quote(json)+")");
+    } catch(Exception e) {backupImportError("No se pudo leer la copia: "+e.getMessage());}
+   }).start();
+  }
+ }
  public final class AndroidActions {
+  @JavascriptInterface public void exportBackup(String json,String filename) {
+   runOnUiThread(()->{
+    if(json==null || json.isEmpty() || json.length()>MAX_BACKUP_BYTES) {
+     backupExportStatus(false,"La copia no es válida o supera el tamaño permitido.");
+     return;
+    }
+    String safeName=filename==null?"TOTEMPLAST_Copia.json":filename.replaceAll("[^A-Za-z0-9_.-]","_");
+    if(!safeName.endsWith(".json"))safeName+=".json";
+    pendingBackupJson=json;
+    try {
+     Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+     i.addCategory(Intent.CATEGORY_OPENABLE);
+     i.setType("application/json");
+     i.putExtra(Intent.EXTRA_TITLE,safeName);
+     startActivityForResult(i,EXPORT_BACKUP_REQUEST);
+    } catch(Exception e) {
+     pendingBackupJson=null;
+     backupExportStatus(false,"No se pudo abrir el selector de guardado: "+e.getMessage());
+    }
+   });
+  }
+  @JavascriptInterface public void importBackup() {
+   runOnUiThread(()->{
+    try {
+     Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+     i.addCategory(Intent.CATEGORY_OPENABLE);
+     i.setType("*/*");
+     i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+     startActivityForResult(i,IMPORT_BACKUP_REQUEST);
+    } catch(Exception e) {
+     backupImportError("No se pudo abrir el selector de archivos: "+e.getMessage());
+    }
+   });
+  }
   @JavascriptInterface public void prepareMail(String subject,String body) {
    runOnUiThread(()->{
     // v1.5: tanto la URI mailto como los extras contienen el asunto y el informe.

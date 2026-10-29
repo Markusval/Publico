@@ -1,67 +1,33 @@
-# Planificador Producción Totemplast — Android v1.7
+# Planificador Producción Totemplast — Android v2.0
 
-Aplicación offline de previsiones de fabricación de TOTEMPLAST.
+Herramienta TOTEMPLAST de planificación de producción por inyección: trabaja sin Internet y conserva los datos localmente.
 
-## Distribución v1.7 de instalación independiente (error de firma resuelto)
-- Las compilaciones anteriores de GitHub Actions usaban claves de depuración generadas por cada runner. Una APK v1.7 firmada con otra clave no puede sustituir una v1.6 ya instalada conservando sus datos.
-- La compilación independiente usa `-PtotemplastIndependentInstall=true` y el identificador `com.totemplast.planificador`. Puede coexistir con `com.totemplast.prevision` sin que Android la bloquee por conflicto de firma.
-- El nombre visible será **Planificador Producción Totemplast v1.7**, para distinguirla de la anterior.
-- Los datos de la app anterior seguirán exclusivamente en la antigua instalación. NO se migran automáticamente: las bases de datos locales de Android son aisladas por aplicación. No desinstales la anterior hasta que sus datos estén a salvo.
-- El código puede seguir compilando el paquete original usando el comando normal `gradle :app:assembleDebug`, pero esa versión no es actualizable en dispositivos con firmas anteriores diferentes.
-- **Para futuras actualizaciones sobre la misma aplicación sin pérdida de datos**, debe configurarse una clave de firma persistente y privada fuera del repositorio público (por ejemplo en GitHub Actions Secrets). Esto no es posible retroactivamente para las APK anteriores si se ha perdido su clave original.
+## Novedad principal: copias de seguridad completas
+La sección **«Copias de seguridad»**, visible aunque todavía no se haya calculado un informe, incluye:
+- **Exportar base de datos (.json)**: crea un archivo JSON portable con todas las fichas guardadas (referencias y embalajes, cantidades, última lectura y ritmo histórico), calendario compartido (festivos y paradas), y preferencias de letra.
+- **Importar base de datos (.json)**: abre el selector nativo de archivos de Android, valida formato, datos y fecha, muestra el número de fichas y solicita confirmación.
+- **Fusionar** (predeterminado): conserva los registros locales no repetidos y los del archivo; en referencias coincidentes prevalece el archivo. Une festivos y paradas sin duplicados.
+- **Sustituir**: reemplaza todo lo local por el respaldo, tras dos confirmaciones expresas.
+- La escritura utiliza recuperación del almacenamiento anterior si hay un error de espacio.
+- **Formato identificable:** `format: totemplast-production-backup`, `schemaVersion: 1`. Se conserva compatibilidad con este esquema en futuras versiones.
+- Ninguna copia se envía a un servidor. Android permite seleccionar una carpeta local o un proveedor de documentos que el usuario elija.
+- El archivo JSON puede importarse en otra instalación que incluya la función de importar, siempre que sea compatible con el esquema.
 
-## Mejora de ergonomía v1.7
-- **Cambiar entre «Inyectadas por hora» y «Segundos por inyectada» mantiene exactamente la cifra introducida**, incluso cuando se utiliza coma decimal. No se borra ni convierte automáticamente.
-- La vista previa se actualiza con la nueva unidad y las cavidades activas.
-- El informe previo se invalida, para evitar conservar una previsión calculada con otra unidad.
-- Se mantienen todos los cambios de la v1.6, la accesibilidad, el calendario y el envío de correo.
-- Pruebas automáticas del cambio en ambos sentidos, el valor 85 y el decimal 67,2.
+## Compatibilidad con versiones anteriores y firmas
+La v2.0 se publica con el identificador **`com.totemplast.planificador.v2`**, separado de las versiones anteriores, porque las APK de GitHub Actions han utilizado claves de depuración diferentes. **Puede instalarse sin desinstalar la v1.7.**
 
-## Corrección anterior v1.6
-- **Por defecto la máquina se expresa en INYECTADAS POR HORA.** 85 inyectadas/h con 2 cavidades son exactamente 170 piezas/h, con 6 cavidades son 510 piezas/h. El ciclo siempre corresponde a una inyectada de máquina, no a cada pieza.
-- El modo alternativo «segundos por inyectada» sigue disponible, con selección explícita y vista previa de la equivalencia.
-- **Nuevo modo «Piezas directas»**: permite escribir 6.000 piezas fabricadas, sin consignar cajas ni palets.
-- En los modos clásicos, se puede escribir 0 cajas/palets y 6.000 piezas adicionales: el programa ya no aplica el límite arbitrario de piezas por caja.
-- Cambiar de modo convierte el mismo total de piezas a las casillas correspondientes, sin cambiar la cifra.
-- Palets, cajas y piezas se calculan automáticamente para presentar el informe. El valor registrado nunca se rechaza por ser mayor que la capacidad de una caja.
-- Se conserva la fecha, el calendario, la matriz de cortes, el catálogo, el nombre y el icono, y el correo completo.
-- Pruebas de regresión adicionales: 1, 2, 6 y 8 cavidades; 85 inyectadas/h, 85 s/inyectada, 6.000 piezas directas, modos de entrada y resultado calculado.
+**Importante:** la v1.7 no incorporaba exportación de base de datos. Por el aislamiento de datos de Android, la v2.0 **no puede leer directamente la base de datos de otra aplicación instalada**. Si tus datos permanecen exclusivamente en la v1.7, conserva esa aplicación y no la desinstales. Las copias creadas en v2.0 sí se podrán importar en una instalación posterior con el mismo formato.
 
-## Mejoras anteriores (v1.5)
+Para poder actualizar versiones futuras sobre la misma aplicación sin perder datos, se debe configurar una clave de firma permanente y privada en GitHub Actions; el export/import brinda una vía adicional de migración.
 
-- Corregido el botón «Correo a Daniel»: el asunto y el texto completo ya viajan en la dirección `mailto:` y también en los extras del intent de Android.
-- Destinatario: `daniel@totemplast.com`.
-- El asunto contiene la referencia, «Previsión de producción» y fecha de lectura.
-- El cuerpo conserva todo el informe: situación, embalaje, fecha de finalización, matriz S-2/S-1/S/S+1 y calendario.
-- Uso del intent `ACTION_SENDTO` para seleccionar aplicaciones compatibles con correo electrónico. No se envía el correo automáticamente: el usuario revisa y pulsa Enviar.
-- Pruebas automáticas de enlace, asunto, cuerpo, acentos y saltos de línea.
+## Funciones existentes
+- Ritmo por máquina: inyectadas/hora × cavidades = piezas/hora; cambio explícito a segundos por inyectada.
+- Registro por palets, cajas o piezas totales directas, sin límite artificial de piezas sueltas.
+- Previsión de finalización, cuatro escenarios de corte S−2/S−1/S/S+1, embalaje, pausas y calendario.
+- Bordes rojos para los campos obligatorios vacíos y menú de accesibilidad con tamaño y negrita.
+- Preparación del informe íntegro para el correo empresarial.
 
-## Novedades conservadas de la v1.4
-- Por defecto, todos los valores escritos en las casillas se muestran en **negrita** y con fuente **20 px**, superior a la original.
-- Menú de **Accesibilidad** en la sección «Datos del pedido» para seleccionar 18, 20, 22, 24 o 26 px y activar/desactivar negrita.
-- Los ajustes se guardan localmente en el móvil y se recuperan al abrir la aplicación; incluye botón de restablecimiento.
-- Los marcadores de posición (placeholder) siguen siendo discretos, para distinguirlos de un dato introducido.
-- Se mantienen el calendario, los cálculos, el catálogo de referencias y la validación de obligatorios.
+## Compilación Android
+GitHub Actions ejecuta las pruebas de la aplicación y la nueva batería de respaldo; entrega el artefacto **TOTEMPLAST-Planificador-Produccion-v2.0-APK** que contiene `app-debug.apk`. Android 6.0 o posterior, sin permisos de almacenamiento generales.
 
-## Novedades que se conservan de la v1.2
-- Los campos **obligatorios vacíos** aparecen desde el inicio con un borde **rojo de 2 px**, que desaparece al introducir un valor.
-- Al borrar un dato obligatorio, su borde rojo reaparece de inmediato, también si se trata del ciclo actual.
-- Obligatorios: referencia, pedido total, cavidades, ciclo/inyectadas por hora, piezas por caja, cajas por palet y avance indicado según modo (cajas totales o palets completos). Para lecturas anteriores, fecha y hora de lectura.
-- **Opcionales y nunca marcados por estar vacíos**: cajas adicionales fuera de palets completos, piezas sueltas, motivo de parada, festivos y vacaciones.
-- Los valores `0` de cajas o palets son válidos y no se marcan como ausentes.
-- Si se intenta calcular con datos obligatorios sin rellenar, se indica el error y se enfoca el primer campo pendiente.
-- Sin cambios en las fórmulas del motor ni en el calendario habitual.
-
-## Características conservadas
-- Nombre e icono Android: **Planificador Producción Totemplast**, logo PES.
-- Cálculos por cavidades y ciclos de inyección, calendario y festivos, matriz de cortes S-2/S-1/S/S+1.
-- Catálogo local de embalajes CHH-04 y DSM-117, sin tomar esas cantidades como pedido.
-- El ciclo se introduce de nuevo en cada previsión.
-- El correo se prepara con asunto y cuerpo completos en la aplicación de correo; el usuario confirma el envío.
-
-## Compilación
-GitHub Actions ejecuta las pruebas de validación y genera el APK **TOTEMPLAST-Planificador-Produccion-v1.7-Independiente-APK**. El archivo instalable se llama `app-debug.apk`.
-
-Paquete original: `com.totemplast.prevision`; paquete de instalación independiente: `com.totemplast.planificador`. En ambos casos `versionCode 7`, `versionName 1.7`.
-
-**Nota sobre actualizaciones:** las APK de depuración creadas por ejecuciones distintas pueden estar firmadas con claves diferentes. No desinstales una versión anterior sin guardar primero los datos locales que quieras preservar.
+`versionCode 20`, `versionName 2.0`. Mantiene el logo PES y la identidad TOTEMPLAST.

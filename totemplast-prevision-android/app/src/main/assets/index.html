@@ -213,6 +213,23 @@
    <p class="mail-note">«Correo a Daniel» abre un borrador dirigido a daniel@totemplast.com con el asunto y el informe completo ya escritos. Revisa y pulsa Enviar en tu aplicación de correo.</p>
    <div id="actionStatus" class="action-status" role="status"></div>
   </section>
+  <section class="panel backup-panel" aria-labelledby="backup-heading">
+    <div class="panel-head"><div><span class="step">04</span><h2 id="backup-heading">Copias de seguridad</h2></div>
+      <span class="backup-tag">v2.0 · Archivo JSON</span></div>
+    <p class="muted">Guarda todas tus referencias registradas y sus lecturas, la configuración del calendario (festivos, puentes y paradas) y las preferencias de accesibilidad. El archivo se guarda en la carpeta o servicio que elijas; no se envía a servidores de TOTEMPLAST.</p>
+    <p class="backup-count" id="backupCount" aria-live="polite">Consultando referencias guardadas…</p>
+    <div class="backup-actions">
+      <button type="button" id="exportBackupBtn" class="outline backup-action">Exportar base de datos (.json)</button>
+      <button type="button" id="importBackupBtn" class="outline backup-action">Importar base de datos (.json)</button>
+    </div>
+    <div class="field backup-options"><label for="backupImportMode">Cómo recuperar los datos</label>
+      <select id="backupImportMode">
+        <option value="merge" selected>Fusionar: conservar actuales y traer la copia (duplicados: gana la copia)</option>
+        <option value="replace">Sustituir: borrar los actuales y restaurar solo la copia</option>
+      </select></div>
+    <input id="backupFileInput" type="file" accept=".json,application/json,text/plain" class="hidden" aria-label="Seleccionar copia de seguridad TOTEMPLAST">
+    <p id="backupStatus" class="backup-status" role="status" aria-live="polite">Solo se exportan los datos ya guardados. Antes de sustituir, exporta una copia de seguridad de este dispositivo.</p>
+  </section>
   <footer>PREVISIÓN DE PRODUCCIÓN · TOTEMPLAST · Uso local, sin servidores</footer>
  </main>
  <script src="app.js"></script>
@@ -220,6 +237,7 @@
  <script src="validacion-obligatorios.js"></script>
  <script src="captura-produccion.js"></script>
  <script src="accesibilidad.js"></script>
+ <script src="respaldo.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
 (function () {
@@ -227,6 +245,7 @@
   const E = window.TotemplastEngine;
   const Validation = window.TotemplastValidation;
   const Capture = window.TotemplastCapture;
+  const Backup = window.TotemplastBackup;
   const Accessibility = window.TotemplastAccessibility;
   const ACCESSIBILITY_KEY = "totemplast_accesibilidad_v14";
   const STORAGE_KEY = 'totemplast_previsiones_v1';
@@ -615,7 +634,7 @@
       injectionsPerHour:r.injectionsPerHour,measuredRateValue:r.measuredRateValue,measuredRateUnit:r.measuredRateUnit,piecesPerBox:r.piecesPerBox,
       boxesPerPallet:r.boxesPerPallet,fullBoxes:r.fullBoxes,loosePieces:r.loosePieces,
       readAt:r.readAt.toISOString(),mode:mode };
-    persist();refreshReferences(r.reference);showRateHint(r.reference);
+    persist();refreshReferences(r.reference);showRateHint(r.reference);updateBackupCount();
   }
   function loadReference(ref) {
     if (!stored[ref]) return;
@@ -727,7 +746,7 @@
     E.normalizeClosures(calendarState);
     try {localStorage.setItem(CALENDAR_KEY,JSON.stringify(calendarState));}
     catch(_) {showCalendarError('No se han podido guardar las paradas, aunque se usan para el calculo actual.');}
-    renderCalendar();
+    renderCalendar();updateBackupCount();
     if (lastReport) calculate(true);
   }
   function showCalendarError(message) {
@@ -836,7 +855,7 @@
   $('deleteBtn').addEventListener('click',()=>{
     const ref=$('savedReferences').value;
     if(ref && window.confirm('¿Eliminar la referencia '+ref+' del dispositivo?')){
-      delete stored[ref];persist();newReference();
+      delete stored[ref];persist();newReference();updateBackupCount();
     }
   });
   $('copyBtn').addEventListener('click',copyReport);
@@ -852,6 +871,100 @@
     Accessibility.DEFAULT, true
   ));
   restoreAccessibilityPreferences();
+  // v2.0: respaldo portable de la base local, sin servidor ni permisos de almacenamiento.
+  function backupCurrentData() {
+    let prefs=null;
+    try {prefs=JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY)||'null');}catch(_){}
+    return {references:stored,calendar:calendarState,accessibility:prefs};
+  }
+  function updateBackupCount() {
+    const count=Object.keys(stored).length;
+    text('backupCount',n(count)+' referencia'+(count===1?'':'s')+
+      ' guardada'+(count===1?'':'s')+' · '+n(calendarState.holidays.length)+
+      ' festivo'+(calendarState.holidays.length===1?'':'s')+
+      ' · '+n(calendarState.pauses.length)+' parada'+(calendarState.pauses.length===1?'':'s'));
+  }
+  function backupMessage(msg,error) {
+    text('backupStatus',msg);
+    $('backupStatus').classList.toggle('backup-error',Boolean(error));
+  }
+  function exportBackup() {
+    try {
+      const json=Backup.exportText(backupCurrentData(),new Date());
+      const now=new Date();
+      const two=v=>String(v).padStart(2,'0');
+      const filename='TOTEMPLAST_Copia_'+now.getFullYear()+'-'+two(now.getMonth()+1)+
+        '-'+two(now.getDate())+'_'+two(now.getHours())+'-'+two(now.getMinutes())+'.json';
+      if (window.Android && typeof window.Android.exportBackup==='function') {
+        window.Android.exportBackup(json,filename);
+        backupMessage('Selecciona dónde guardar la copia de seguridad. La exportación aún no se ha completado.',false);
+        return;
+      }
+      const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const anchor=document.createElement('a');
+      anchor.href=url;anchor.download=filename;document.body.appendChild(anchor);
+      anchor.click();anchor.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),20000);
+      backupMessage('El navegador ha iniciado la descarga: '+filename,false);
+    } catch(err) {backupMessage('No se ha exportado la copia: '+err.message,true);}
+  }
+  function importBackup() {
+    if (window.Android && typeof window.Android.importBackup==='function') {
+      backupMessage('Selecciona el archivo JSON de la copia de seguridad.',false);
+      window.Android.importBackup();
+    } else {
+      $('backupFileInput').value='';
+      $('backupFileInput').click();
+    }
+  }
+  function applyBackupText(json) {
+    try {
+      const original=Backup.readText(json);
+      const mode=$('backupImportMode').value;
+      const result=Backup.combine(backupCurrentData(),original.data,mode);
+      // Comprobar el calendario con las mismas reglas que utiliza el motor de producción.
+      E.normalizeClosures(result.data.calendar);
+      const msg='Copia del '+new Date(original.createdAt).toLocaleString('es-ES')+
+        '. Contiene '+n(result.newReferences)+' referencias. '+
+        (mode==='merge'
+          ? 'Se fusionarán con las '+n(result.previousReferences)+' existentes; '+n(result.conflicts)+' referencia(s) repetidas se sustituirán con la versión de la copia.'
+          : 'Se SUSTITUIRÁN las '+n(result.previousReferences)+' referencias, los festivos, las paradas y las preferencias que tengas ahora.');
+      if(!window.confirm(msg+'\n\n¿Aplicar la importación?')) {
+        backupMessage('Importación cancelada. Los datos actuales no se han modificado.',false);
+        return;
+      }
+      if(mode==='replace' && !window.confirm(
+        'ÚLTIMA CONFIRMACIÓN: vas a sustituir todos los datos guardados en este dispositivo. ¿Continuar?')) {
+        backupMessage('Importación cancelada. Los datos actuales siguen intactos.',false);
+        return;
+      }
+      Backup.writeStorage(localStorage,result.data);
+      // Recargar para que referencias, calendario y accesibilidad utilicen lo importado.
+      backupMessage('Copia restaurada correctamente. Actualizando los datos...',false);
+      window.location.reload();
+    } catch(err) {
+      backupMessage('No se ha importado ningún dato: '+err.message,true);
+    }
+  }
+  Backup.acceptFile=applyBackupText; // Devuelve los datos el selector de documentos Android.
+  Backup.onAndroidExportResult=function(ok,message) {
+    backupMessage(message || (ok?'Copia exportada correctamente.':'La copia no se guardó.'),!ok);
+  };
+  Backup.onAndroidImportError=function(message) {
+    backupMessage('No se ha importado ningún dato: '+message,true);
+  };
+  $('exportBackupBtn').addEventListener('click',exportBackup);
+  $('importBackupBtn').addEventListener('click',importBackup);
+  $('backupFileInput').addEventListener('change',async()=>{
+    const file=$('backupFileInput').files[0];
+    if(!file)return;
+    try {
+      if(file.size>4000000)throw new Error('El archivo es demasiado grande (máximo 4 MB).');
+      applyBackupText(await file.text());
+    } catch(err) {backupMessage('No se pudo leer la copia: '+err.message,true);}
+  });
+  updateBackupCount();
   updateClock();setInterval(updateClock,20000);refreshReferences('');showRateHint('');updateRequiredBorders();updateRatePreview();
 })();
 
