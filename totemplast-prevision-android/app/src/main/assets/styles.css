@@ -160,10 +160,14 @@ main .field select.rate-unit{height:50px}
 @media(max-width:600px){
   .saved-row{padding:13px 14px}
   .saved-actions button{flex:1 1 0}
-  /* En una pantalla de 355 CSS px: Referencia 141.5 -> 354 px (x2.5).
-     El selector pasa de ~105 a ~267 px sin perder su tipografía accesible. */
-  .reference-wide-grid .reference-full-width{position:relative;left:50%;transform:translateX(-50%);width:calc(100vw - 1px);max-width:calc(100vw - 1px)}
-  .reference-wide-grid .reference-full-width label{padding-left:30px}
+  /* v2.2: ancho del contenedor, sin sobresalir de los márgenes del panel. */
+  .reference-wide-grid .reference-full-width{position:static;left:auto;transform:none;width:100%;max-width:100%}
+  .reference-wide-grid .reference-full-width label{padding-left:0}
   .reference-wide-grid .order-field{width:100%}
 }
 @media(max-width:350px){.saved-row .saved-flex #savedReferences{flex-basis:auto}}
+
+/* v2.2: garantías de ancho para el campo de referencia en todas las pantallas. */
+.reference-wide-grid,.reference-wide-grid .reference-full-width,.reference-wide-grid #reference{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+/* v2.2: evitar desplazamiento horizontal en móviles estrechos (320 px). */
+@media(max-width:360px){.calendar-panel .panel-head{flex-wrap:wrap}.calendar-panel .schedule-tag{white-space:normal}.calendar-panel .form-grid .field{min-width:0}.calendar-panel input[type="datetime-local"]{min-width:0;max-width:100%}}

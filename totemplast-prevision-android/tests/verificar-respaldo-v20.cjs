@@ -103,7 +103,7 @@ assert(java.includes('JSONObject.quote(json)'));
 assert(java.includes('JSONObject.quote(message)'));
 assert(java.includes('"respaldo.js"'));
 assert(css.includes('.backup-panel'));
-assert(/applicationId independentInstall \? 'com\.totemplast\.planificador\.v2(?:1)?'/.test(gradle),"El paquete de respaldo debe ser independiente y compatible con v2.x");
+assert(/applicationId independentInstall \? 'com\.totemplast\.planificador\.v2(?:1|2)?'/.test(gradle),"El paquete de respaldo debe ser independiente y compatible con v2.x");
 const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(inlineScripts.length,1);
 new vm.Script(inlineScripts[0][1],{filename:'index.html'});

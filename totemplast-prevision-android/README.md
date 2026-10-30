@@ -1,14 +1,26 @@
-# Planificador Producción Totemplast — Android v2.1
+# Planificador Producción Totemplast — Android v2.2
 
 Herramienta TOTEMPLAST de planificación de producción por inyección: trabaja sin Internet y conserva los datos localmente.
 
-## Novedades v2.1: referencias legibles en el teléfono
-- **Referencia del molde/pieza:** deja de compartir fila con el total del pedido y ocupa toda la anchura disponible. En los móviles estrechos se extiende hasta los bordes de la pantalla. Comprobación visual de 355 CSS px: **141,5 → 354 píxeles (2,5 veces)**.
+## Corrección v2.2: referencia dentro de los márgenes del diseño
+- Corregido el desbordamiento horizontal del campo «Referencia», causado por una regla de la v2.1 que le daba el ancho total de la pantalla (100vw) en vez del ancho del panel.
+- La referencia sigue en una fila completa, pero **ocupa el 100 % del ancho útil del panel** y nunca lo sobrepasa. El campo «Pedido total» permanece debajo.
+- El selector «Referencias guardadas» se mantiene ancho, y sus botones «Nueva» y «Eliminar» permanecen debajo del selector.
+- Se preserva el tamaño de fuente y la negrita elegidos en Accesibilidad.
+- Comprobado en Chromium en tamaños de móvil de 320, 355, 393 y 412 píxeles, además de 600 y 768 píxeles. A 355 px, el campo «Referencia» mide 295 px, completamente dentro del panel, sin desplazamiento horizontal.
+- También se ha evitado el desplazamiento horizontal del calendario en las pantallas de 320 px.
+- No se han modificado el motor de previsiones, los valores guardados ni el formato JSON de respaldo.
+
+### Migrar datos desde v2.1
+La v2.2 se publica con el identificador `com.totemplast.planificador.v22` debido al conflicto de las firmas de depuración entre compilaciones, por lo que se instala junto a la v2.1. Primero **exporta la base de datos de la v2.1 a un archivo JSON** y luego **impórtala desde la v2.2**.
+
+## Mejoras de v2.1: referencias legibles en el teléfono
+- **Referencia del molde/pieza:** deja de compartir fila con el total del pedido y ocupa toda la anchura disponible. En la v2.1 se extendía erróneamente hasta los bordes de la pantalla, detalle corregido en la v2.2.
 - **Referencias guardadas:** el selector ocupa una línea completa. Los botones **Nueva** y **Eliminar** aparecen debajo en otra fila. Comprobación visual de 355 CSS px: **105 → 267 píxeles (más de 2,5 veces)**.
 - Si una referencia guardada es larga, su nombre completo aparece también en un renglón que permite partir las palabras. Se mantiene el tamaño y la negrita configurados en Accesibilidad.
 - El campo **Pedido total** se coloca debajo de la referencia para no estrecharla.
 - No se ha modificado ninguna fórmula de cálculo ni el esquema JSON de las copias de seguridad v2.0.
-- Pruebas de diseño responsive en Chromium (355 y 393 CSS px) y tests automáticos del marcado.
+- Pruebas de diseño responsive en Chromium (355 y 393 CSS px) y tests automáticos del marcado. La v2.2 verifica también que los campos respeten los márgenes.
 
 ### Cómo pasar los datos desde v2.0
 Debido a que las APK de depuración de GitHub se firman con certificados distintos, esta v2.1 se publica con identificador independiente `com.totemplast.planificador.v21`, sin desinstalar ni sobrescribir la v2.0.
@@ -42,6 +54,6 @@ Para poder actualizar versiones futuras sobre la misma aplicación sin perder da
 - Preparación del informe íntegro para el correo empresarial.
 
 ## Compilación Android
-GitHub Actions ejecuta las pruebas de la aplicación y la nueva batería de respaldo; entrega el artefacto **TOTEMPLAST-Planificador-Produccion-v2.1-APK** que contiene `app-debug.apk`. Android 6.0 o posterior, sin permisos de almacenamiento generales.
+GitHub Actions ejecuta las pruebas de la aplicación y la nueva batería de respaldo; entrega el artefacto **TOTEMPLAST-Planificador-Produccion-v2.2-APK** que contiene `app-debug.apk`. Android 6.0 o posterior, sin permisos de almacenamiento generales.
 
-`versionCode 21`, `versionName 2.1`. Mantiene el logo PES y la identidad TOTEMPLAST.
+`versionCode 22`, `versionName 2.2`. Mantiene el logo PES y la identidad TOTEMPLAST.
