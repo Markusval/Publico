@@ -14,7 +14,8 @@
     calendar:'totemplast_calendario_v2',
     accessibility:'totemplast_accesibilidad_v14',
     migration:'totemplast_datos_v3_aplicados',
-    catalog:'totemplast_catalogo_embalajes_20261015'
+    catalog:'totemplast_catalogo_embalajes_20261015',
+    moldCorrections:'totemplast_moldes_config_v23'
   });
   const isObject = x => x !== null && typeof x === 'object' && !Array.isArray(x);
   function insist(condition, message) {
@@ -114,12 +115,29 @@
       typeof source.bold==='boolean','El ajuste de accesibilidad es inválido.');
     return {size:source.size,bold:source.bold};
   }
+  function normalizeMoldCorrections(value){
+    if(value===undefined||value===null)return Object.create(null);
+    insist(isObject(value),'Correcciones de moldes inválidas.');
+    const out=Object.create(null),keys=Object.keys(value);
+    insist(keys.length<=1000,'Hay demasiados ajustes de moldes.');
+    for(const key of keys){
+      insist(key.length>0&&key.length<=180&&!['__proto__','constructor','prototype'].includes(key)&&
+        (key.startsWith('MOLDE|')||key.startsWith('SIN NUMERO|')),'Clave de molde incorrecta.');
+      const x=value[key];
+      insist(isObject(x)&&Number.isSafeInteger(x.cavities)&&x.cavities>0&&
+        typeof x.base==='number'&&Number.isFinite(x.base)&&x.base>0,
+        'Ajuste de molde incorrecto: '+key);
+      out[key]={cavities:x.cavities,base:x.base};
+    }
+    return out;
+  }
   function normalizeData(raw) {
     insist(isObject(raw),'La copia no contiene datos.');
     return {
       references:normalizedReferences(raw.references),
       calendar:normalizedCalendar(raw.calendar),
-      accessibility:normalizedAccessibility(raw.accessibility)
+      accessibility:normalizedAccessibility(raw.accessibility),
+      moldCorrections:normalizeMoldCorrections(raw.moldCorrections)
     };
   }
   function exportText(data, date) {
@@ -127,7 +145,7 @@
     insist(Number.isFinite(now.getTime()),'Fecha de copia de seguridad incorrecta.');
     const safe=normalizeData(data);
     const text=JSON.stringify({
-      format:FORMAT, schemaVersion:VERSION, appVersion:'2.0',
+      format:FORMAT, schemaVersion:VERSION, appVersion:'2.3',
       createdAt:now.toISOString(), data:safe
     },null,2);
     insist(text.length<=MAX_CHARS,'La copia supera el tamaño admitido.');
@@ -168,7 +186,8 @@
       unique.add(fingerprint);return true;
     }).sort((a,b)=>a.start.localeCompare(b.start));
     return {data:{references,calendar:{holidays,pauses:mergedPauses},
-        accessibility:incoming.accessibility===null?local.accessibility:incoming.accessibility},
+        accessibility:incoming.accessibility===null?local.accessibility:incoming.accessibility,
+        moldCorrections:Object.assign(Object.create(null),local.moldCorrections,incoming.moldCorrections)},
       conflicts,newReferences:fromNames.length,previousReferences:localNames.length};
   }
   function writeStorage(storage,data) {
@@ -178,7 +197,8 @@
       [STORAGE_KEYS.calendar,JSON.stringify(safe.calendar)],
       [STORAGE_KEYS.accessibility,safe.accessibility?JSON.stringify(safe.accessibility):null],
       [STORAGE_KEYS.migration,'1'],
-      [STORAGE_KEYS.catalog,'1']
+      [STORAGE_KEYS.catalog,'1'],
+      [STORAGE_KEYS.moldCorrections,JSON.stringify(safe.moldCorrections)]
     ];
     const old=updates.map(([k])=>[k,storage.getItem(k)]);
     try {
