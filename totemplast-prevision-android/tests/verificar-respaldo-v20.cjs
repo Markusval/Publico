@@ -27,7 +27,7 @@ const backup=Backup.exportText(initial,new Date('2026-10-28T12:35:00Z'));
 const restored=Backup.readText(backup);
 assert.equal(restored.createdAt,'2026-10-28T12:35:00.000Z');
 assert.equal(restored.appVersion,'2.3');
-assert.deepEqual(JSON.parse(JSON.stringify(restored.data)),initial);
+assert.deepEqual(JSON.parse(JSON.stringify(restored.data)),{...initial,moldCorrections:{}});
 assert.equal(JSON.parse(backup).format,'totemplast-production-backup');
 assert.equal(JSON.parse(backup).schemaVersion,1);
 assert.equal(Backup.readText('\uFEFF'+backup).data.references['DSM 113'].fullBoxes,42);
