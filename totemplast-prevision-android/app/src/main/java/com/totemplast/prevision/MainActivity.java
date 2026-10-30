@@ -30,7 +30,7 @@ import java.util.Arrays;
 public class MainActivity extends Activity {
  private static final String BASE="https://appassets.androidplatform.net/assets/";
  private static final String HOST="appassets.androidplatform.net";
- private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js","captura-produccion.js","accesibilidad.js","respaldo.js"));
+ private static final Set<String> ASSETS=new HashSet<>(Arrays.asList("index.html","styles.css","app.js","catalogo-referencias.js","validacion-obligatorios.js","captura-produccion.js","accesibilidad.js","respaldo.js","catalogo-moldes-v23.js"));
  private static final int EXPORT_BACKUP_REQUEST=4301;
  private static final int IMPORT_BACKUP_REQUEST=4302;
  private static final int MAX_BACKUP_BYTES=4000000;

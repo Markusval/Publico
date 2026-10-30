@@ -57,6 +57,16 @@
     </div>
    </div>
 
+   <div class="mold-box">
+    <label for="moldFind">Buscar moldes (número o pieza)</label>
+    <input id="moldFind" type="search" placeholder="Ej. 264, CHH-04, CARLOS">
+    <label for="moldPick">Molde del catálogo</label>
+    <select id="moldPick"><option value="">Selecciona un molde</option></select>
+    <div id="variantBox" class="hidden"><label for="variantPick">Configuración / pieza obligatoria</label>
+    <select id="variantPick"><option value="">Elige la configuración</option></select></div>
+    <p id="moldInfo" aria-live="polite">160 moldes y 9 piezas sin número. Base editable en inyectadas/hora.</p>
+    <button id="moldSaveBase" type="button" class="outline" disabled>Guardar base y cavidades de este molde</button>
+   </div>
    <p class="required-hint"><span class="required-hint-symbol" aria-hidden="true"></span> Los campos obligatorios vacíos aparecen con borde rojo.</p>
    <div class="form-grid reference-wide-grid">
     <div class="field reference-full-width"><label for="reference">Referencia <span class="req">*</span></label>
@@ -241,6 +251,7 @@
  <script src="captura-produccion.js"></script>
  <script src="accesibilidad.js"></script>
  <script src="respaldo.js"></script>
+ <script src="catalogo-moldes-v23.js"></script>
  <script>
 /* Interfaz y persistencia. Se ejecuta localmente en Android o en un navegador. */
 (function () {
@@ -249,6 +260,11 @@
   const Validation = window.TotemplastValidation;
   const Capture = window.TotemplastCapture;
   const Backup = window.TotemplastBackup;
+  const Molds=window.TotemplastMolds;
+  const MOLD_KEY="totemplast_moldes_config_v23";
+  let selectedMold=null;
+  let moldUpdates={};
+  try {moldUpdates=JSON.parse(localStorage.getItem(MOLD_KEY)||"{}")||{};}catch(_){}
   const Accessibility = window.TotemplastAccessibility;
   const ACCESSIBILITY_KEY = "totemplast_accesibilidad_v14";
   const STORAGE_KEY = 'totemplast_previsiones_v1';
@@ -409,6 +425,8 @@
     }
   }
   function getInput() {
+    if($('moldPick').value && Molds.molds[Number($('moldPick').value)].configurations.length>1 && !selectedMold)
+      throw new Error('Elige la configuración de este molde antes de calcular.');
     const measured=rateValue();
     const machine=Capture.machineRate(measured,$('rateUnit').value,$('cavities').value);
     const quantity=Capture.parseProduction({mode,piecesPerBox:$('piecesPerBox').value,
@@ -424,7 +442,8 @@
       boxesPerPallet:$('boxesPerPallet').value,
       fullBoxes:quantity.fullBoxes,
       loosePieces:quantity.loosePieces,
-      readAt:d
+      readAt:d,
+      moldCatalogKey:selectedMold
     };
   }
   function readTime(value) {
@@ -643,11 +662,12 @@
     stored[r.reference]={ reference:r.reference,orderPieces:r.orderPieces,cavities:r.cavities,
       injectionsPerHour:r.injectionsPerHour,measuredRateValue:r.measuredRateValue,measuredRateUnit:r.measuredRateUnit,piecesPerBox:r.piecesPerBox,
       boxesPerPallet:r.boxesPerPallet,fullBoxes:r.fullBoxes,loosePieces:r.loosePieces,
-      readAt:r.readAt.toISOString(),mode:mode };
+      readAt:r.readAt.toISOString(),mode:mode,moldCatalogKey:r.moldCatalogKey||selectedMold };
     persist();refreshReferences(r.reference);showRateHint(r.reference);updateBackupCount();
   }
   function loadReference(ref) {
     if (!stored[ref]) return;
+    resetMold();
     const a=stored[ref];
     for(const id of ['reference','orderPieces','cavities','piecesPerBox','boxesPerPallet'])
       $(id).value=a[id] == null ? '' : a[id];
@@ -667,9 +687,11 @@
     setTimeMode(Boolean(a.readAt)); // No transformar una lectura vieja en una lectura de ahora.
     refreshReferences(ref);
     invalidate();
+    if(a.moldCatalogKey){const match=Molds.findKey(a.moldCatalogKey);if(match){$('moldPick').value=String(match.moldIndex);selectMold(false);if(match.mold.configurations.length>1){$('variantPick').value=String(match.configIndex);applyMold(false);}}}
     updateRatePreview();
   }
   function newReference() {
+    resetMold();
     for(const id of ['reference','orderPieces','cavities','injectionsPerHour','piecesPerBox','boxesPerPallet'])$(id).value='';
     for(const id of ['producedBoxes','producedPallets','producedExtraBoxes','producedLoosePieces','producedPieces'])$(id).value='0';
     $('rateUnit').value='per_hour';$('readingDateTime').value=''; setMode('boxes',false);setTimeMode(false);refreshReferences('');showRateHint('');invalidate();
@@ -829,6 +851,71 @@
     const time=new Date();
     text('clock',dateShort(time)+' · '+hhmm(time)+' h');
   }
+  function resetMold() {
+    selectedMold=null;$('moldFind').value='';fillMolds('');
+    $('moldPick').value='';$('variantPick').value='';
+    $('variantBox').classList.add('hidden');$('moldSaveBase').disabled=true;
+    text('moldInfo','160 moldes con número y 9 piezas sin número. Base editable en inyectadas/hora.');
+  }
+  function fillMolds(q){
+    const sel=$('moldPick');sel.innerHTML='<option value="">Selecciona un molde</option>';
+    for(const item of Molds.search(q)){
+      const op=document.createElement('option');op.value=String(item.index);
+      op.textContent=(item.mold.number||'SIN Nº')+' · '+item.mold.piece;sel.appendChild(op);
+    }
+  }
+  function selectMold(fill){
+    selectedMold=null;
+    const idx=$('moldPick').value;
+    if(idx===''){$('variantBox').classList.add('hidden');return;}
+    const mold=Molds.molds[Number(idx)];
+    const v=$('variantPick');v.innerHTML='<option value="">Elige la pieza correcta</option>';
+    mold.configurations.forEach((cfg,i)=>{
+      const op=document.createElement('option');op.value=String(i);
+      op.textContent=cfg.label+' · '+cfg.cavities+' cav. · '+(cfg.base||'SIN BASE')+' iny/h';
+      v.appendChild(op);
+    });
+    if(mold.configurations.length===1){$('variantBox').classList.add('hidden');v.value='0';applyMold(fill);}
+    else{
+      $('variantBox').classList.remove('hidden');v.value='';
+      if(fill){$('reference').value=mold.number||'';$('cavities').value='';$('injectionsPerHour').value='';}
+      $('moldSaveBase').disabled=true;
+      text('moldInfo','Este molde tiene varias bases. Elige la configuración antes de continuar.');
+      updateRatePreview();invalidate();
+    }
+  }
+  function applyMold(fill){
+    const idx=$('moldPick').value,j=$('variantPick').value;
+    if(idx===''||j==='')return;
+    const mold=Molds.molds[Number(idx)],cfg=Molds.effectiveConfig(mold,Number(j),moldUpdates);
+    selectedMold=Molds.key(mold,Number(j));
+    $('moldSaveBase').disabled=false;
+    if(fill){
+      $('reference').value=mold.number||'';
+      $('cavities').value=String(cfg.cavities);
+      $('rateUnit').value='per_hour';
+      $('injectionsPerHour').value=cfg.base||'';
+    }
+    text('moldInfo',(mold.number||'SIN Nº')+' · '+cfg.label+' · '+cfg.cavities+' cavidades · BASE: '+(cfg.base||'SIN DATO')+' iny/h. '+(mold.number?'Puedes cambiarla.':'Introduce una referencia real de pieza.'));
+    updateRatePreview();invalidate();
+  }
+  function saveMoldCorrection(){
+    if(!selectedMold)return;
+    const cavities=Number($('cavities').value),raw=$('injectionsPerHour').value.trim().replace(',','.');
+    const base=Number(raw);
+    if(!Number.isSafeInteger(cavities)||cavities<1||!raw||!Number.isFinite(base)||base<=0){
+      text('moldInfo','Introduce cavidades y base válidas antes de guardar.');return;
+    }
+    const injections=Capture.machineRate(base,$('rateUnit').value,cavities).injectionsPerHour;
+    moldUpdates[selectedMold]={cavities,base:injections};
+    try{localStorage.setItem(MOLD_KEY,JSON.stringify(moldUpdates));text('moldInfo','Corrección guardada: '+cavities+' cavidades y '+injections.toLocaleString('es-ES')+' iny/h.');}
+    catch(_){text('moldInfo','No se ha podido guardar la corrección.');}
+  }
+  fillMolds('');
+  $('moldFind').addEventListener('input',()=>{fillMolds($('moldFind').value);selectedMold=null;$('variantBox').classList.add('hidden');$('moldSaveBase').disabled=true;});
+  $('moldPick').addEventListener('change',()=>selectMold(true));
+  $('variantPick').addEventListener('change',()=>applyMold(true));
+  $('moldSaveBase').addEventListener('click',saveMoldCorrection);
   for(const id of dataIds) {
     $(id).addEventListener('input',()=>{
       if (id==='reference') showRateHint($('reference').value);
@@ -885,7 +972,7 @@
   function backupCurrentData() {
     let prefs=null;
     try {prefs=JSON.parse(localStorage.getItem(ACCESSIBILITY_KEY)||'null');}catch(_){}
-    return {references:stored,calendar:calendarState,accessibility:prefs};
+    return {references:stored,calendar:calendarState,accessibility:prefs,moldCorrections:moldUpdates};
   }
   function updateBackupCount() {
     const count=Object.keys(stored).length;

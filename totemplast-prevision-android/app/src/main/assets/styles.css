@@ -171,3 +171,10 @@ main .field select.rate-unit{height:50px}
 .reference-wide-grid,.reference-wide-grid .reference-full-width,.reference-wide-grid #reference{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
 /* v2.2: evitar desplazamiento horizontal en móviles estrechos (320 px). */
 @media(max-width:360px){.calendar-panel .panel-head{flex-wrap:wrap}.calendar-panel .schedule-tag{white-space:normal}.calendar-panel .form-grid .field{min-width:0}.calendar-panel input[type="datetime-local"]{min-width:0;max-width:100%}}
+
+/* Catálogo de moldes v2.3 */
+.mold-box{background:#f3f8fa;border:1px solid #d2e3e9;border-radius:12px;padding:14px;margin:4px 0 20px;min-width:0}
+.mold-box label{display:block;font-size:13px;font-weight:750;color:#315a6b;margin:11px 0 6px}
+.mold-box input,.mold-box select{width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:53px;padding:10px 12px;background:#fff;border:1px solid #bcced8;border-radius:9px;color:#18384a;font-size:17px;font-weight:700}
+.mold-box #moldInfo{font-size:13px;line-height:1.5;color:#245c72;overflow-wrap:anywhere}
+.mold-box button{width:100%;margin:8px 0 0}

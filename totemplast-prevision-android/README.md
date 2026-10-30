@@ -1,6 +1,9 @@
-# Planificador Producción Totemplast — Android v2.2
+# Planificador Producción Totemplast — Android v2.3
 
 Herramienta TOTEMPLAST de planificación de producción por inyección: trabaja sin Internet y conserva los datos localmente.
+
+## Catálogo v2.3
+Se incluyen 160 moldes numerados y 9 piezas sin número de molde, conservando sus 181 configuraciones. El operador selecciona pieza y recibe las cavidades y BASE (inyectadas/hora) del archivo. Los valores se pueden corregir y guardar. No se crean pedidos ficticios ni se modifican los datos existentes. Las copias JSON incluyen las correcciones en moldCorrections. La v2.3 se instala por separado de la v2.2; exporta e importa tus datos.
 
 ## Corrección v2.2: referencia dentro de los márgenes del diseño
 - Corregido el desbordamiento horizontal del campo «Referencia», causado por una regla de la v2.1 que le daba el ancho total de la pantalla (100vw) en vez del ancho del panel.
@@ -54,6 +57,6 @@ Para poder actualizar versiones futuras sobre la misma aplicación sin perder da
 - Preparación del informe íntegro para el correo empresarial.
 
 ## Compilación Android
-GitHub Actions ejecuta las pruebas de la aplicación y la nueva batería de respaldo; entrega el artefacto **TOTEMPLAST-Planificador-Produccion-v2.2-APK** que contiene `app-debug.apk`. Android 6.0 o posterior, sin permisos de almacenamiento generales.
+GitHub Actions ejecuta las pruebas de la aplicación y la nueva batería de respaldo; entrega el artefacto **TOTEMPLAST-Planificador-Produccion-v2.3-APK** que contiene `app-debug.apk`. Android 6.0 o posterior, sin permisos de almacenamiento generales.
 
-`versionCode 22`, `versionName 2.2`. Mantiene el logo PES y la identidad TOTEMPLAST.
+`versionCode 23`, `versionName 2.3`. Mantiene el logo PES y la identidad TOTEMPLAST.
